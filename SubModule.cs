@@ -37,7 +37,7 @@ namespace NativeHook
 
             CreateHook(Agent_MaybeAiTickAddr, new Agent_MaybeAiTickDelegate(Agent_OnMaybeAiTick), "Agent_MaybeAiTick");
             CreateHook(Agent_MaybeTickAddr, new Agent_MaybeTickDelegate(Agent_OnMaybeTick), "Agent_MaybeTick");
-            CreateHook(rglSkeleton_MaybeUpdateAddr, new rglSkeleton_MaybeUpdateDelegate(rglSkeleton_MaybeUpdate), "rglSkeleton_MaybeUpdate");
+            //CreateHook(rglSkeleton_MaybeUpdateAddr, new rglSkeleton_MaybeUpdateDelegate(rglSkeleton_MaybeUpdate), "rglSkeleton_MaybeUpdate");
         }
         protected override void OnSubModuleUnloaded()
         {
@@ -51,7 +51,9 @@ namespace NativeHook
         public override void OnMissionBehaviorInitialize(Mission mission)
         {
             base.OnMissionBehaviorInitialize(mission);
+            #if DEBUG
             mission.AddMissionBehavior(new DebugLogic());
+            #endif
         }
 
         private void GetMethodAddressesEditor()
@@ -165,7 +167,7 @@ namespace NativeHook
             NoHeaps = 0x40000000
         }
 
-        [StructLayout(LayoutKind.Sequential, CharSet = System.Runtime.InteropServices.CharSet.Ansi)]
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
         public struct MODULEENTRY32
         {
             internal uint dwSize;

@@ -19,19 +19,6 @@ namespace NativeHook
             if (Agent.Main == null) return;
             if (Input.IsKeyPressed(InputKey.B))
             {
-                /*unsafe
-                {
-                    var agentPtr = (UIntPtr)AccessTools.Method(typeof(Agent), "GetPtr").Invoke(Agent.Main, new object[] {});
-                    delegate*<ulong, MatrixFrame, ulong, ulong, void> setFrameDel = (delegate*<ulong, MatrixFrame, ulong, ulong, void>)(new IntPtr(NativeHookSubModule.NativeDLLAddr + 0xb1e180).ToPointer());
-                    //delegate*<ulong, MatrixFrame, ulong, ulong, void> setFrameDel = (delegate*<ulong, MatrixFrame, ulong, ulong, void>)(new IntPtr(NativeHookSubModule.NativeDLLAddr + 0xaf75d0).ToPointer());
-                    ulong param3 = 0x0U;
-                    ulong param4 = 0x0U;
-                    var frame = Agent.Main.Frame;
-                    frame.Rotate(1f, Vec3.Up);
-                    Agent.Main.SetRotationMatrixFrame(frame);
-                    setFrameDel(Agent.Main.AgentVisuals.Pointer.ToUInt64(), frame, param3, param4);                
-                    //setFrameDel(agentPtr.ToUInt64(), frame, param3, param4);
-                }*/
             }
         }
         public override void OnPreMissionTick(float dt)
@@ -68,30 +55,6 @@ namespace NativeHook
             if (!agent.IsActive()) return;
             if (Input.IsKeyDown(InputKey.B))
             {
-                /*var skelPtr = Agent.Main.AgentVisuals.GetSkeleton().Pointer;
-                unsafe
-                {
-                    var i = 1;
-                    UIntPtr bones_array = new UIntPtr(*(ulong*)(skelPtr + 0x18).ToPointer());
-                    MatrixFrame* bone_frame = (MatrixFrame*)(bones_array + 0x100 * i + 0x4).ToPointer();
-                    var newFrame = *bone_frame;
-                    newFrame.Advance(0.5f);
-                    *bone_frame = newFrame;
-                    var t = true;
-                }*/
-                //agent.MovementFlags |= Agent.MovementControlFlag.TurnRight;
-                //Agent.Main.SetDynamicsFlags(AgentExtensions.AgentDynamicsFlags.Flag22);
-                /*unsafe
-                {
-                    var agentPtr = (UIntPtr)AccessTools.Method(typeof(Agent), "GetPtr").Invoke(Agent.Main, new object[] { });
-                    delegate*<ulong, MatrixFrame, ulong, ulong, void> setFrameDel = (delegate*<ulong, MatrixFrame, ulong, ulong, void>)(new IntPtr(NativeHookSubModule.NativeDLLAddr + 0xaf75d0).ToPointer());
-                    ulong param3 = 0x0U;
-                    ulong param4 = 0x0U;
-                    var frame = Agent.Main.Frame;
-                    frame.Rotate(1f, Vec3.Up);
-                    Agent.Main.SetRotationMatrixFrame(frame);
-                    setFrameDel(agentPtr.ToUInt64(), frame, param3, param4);
-                }*/
             }
         }
     }
