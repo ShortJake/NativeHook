@@ -16,6 +16,7 @@ namespace SampleMod
         private float _maxSpeed;
         private float _acceleration;
         private float _maxTurnSpeed;
+        private float _previousDirection;
         private float _angularAcceleration;
         private bool _isFlying;
         private Agent _effectiveAgent;
@@ -26,10 +27,11 @@ namespace SampleMod
         public FlyingAgentComponent(Agent agent) : base(agent)
         {
             _effectiveAgent = agent.MountAgent ?? agent;
+            _previousDirection = Agent.MovementDirectionAsAngle;
             _maxSpeed = 12f;
-            _acceleration = 5f;
+            _acceleration = 1.3f;
             _maxTurnSpeed = 7f;
-            _angularAcceleration = 3f;
+            _angularAcceleration = 0.8f;
             _isFlying = false;
         }
 
@@ -58,16 +60,16 @@ namespace SampleMod
         }
         private void FlightTick(float inputRotation, Vec3 inputVector, float dt)
         {
-            var turnSpeed = inputRotation * _angularAcceleration;
-            /*var sp = _effectiveAgent.GetRotationVelocity();
-            if (sp != 0f)
-            {
-                InformationManager.DisplayMessage(new InformationMessage(sp.ToString()));
-            }*/
-            turnSpeed = MathF.Clamp(turnSpeed, -_maxTurnSpeed, _maxTurnSpeed);
-            var clampedAngle = MathF.AngleClamp(Agent.MovementDirectionAsAngle + turnSpeed * dt);
+            // Rotation
+            var turnVelocity = _previousDirection - Agent.MovementDirectionAsAngle;
+            turnVelocity += inputRotation * _angularAcceleration * dt;
+            turnVelocity *= 0.96f;
+            turnVelocity = MathF.Clamp(turnVelocity, -_maxTurnSpeed, _maxTurnSpeed);
+            var clampedAngle = MathF.AngleClamp(Agent.MovementDirectionAsAngle + turnVelocity * dt);
             _effectiveAgent.SetMovementDirectionAsAngle(clampedAngle);
+            _previousDirection = Agent.MovementDirectionAsAngle;
 
+            // Linear Velocity
             var velocity = _effectiveAgent.GetGlobalVelocity();
             if (velocity.Length > _maxSpeed)
             {
@@ -102,7 +104,7 @@ namespace SampleMod
             var onLand = _effectiveAgent.IsOnLand();
             if (!_isFlying && !onLand)
             {
-                if (Input.IsKeyPressed(_flyKey) || _effectiveAgent.Velocity.Length > 5f)
+                if (Input.IsKeyPressed(_flyKey) || _effectiveAgent.Velocity.Length > 7f)
                 StartFlying();
             }
             // End flying if on ground
@@ -124,5 +126,7 @@ namespace SampleMod
                 FlightTick(inputRot, inputVector, dt);
             }
         }
+
+        public bool IsFlying { get { return _isFlying; } }
     }
 }
