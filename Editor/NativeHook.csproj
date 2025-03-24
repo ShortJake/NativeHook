@@ -1,0 +1,125 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Version>0.3.0</Version>
+    <TargetFramework>net472</TargetFramework>
+    <Platforms>x64;x86;AnyCPU</Platforms>
+    <LangVersion>10.0</LangVersion>
+    <Nullable>disable</Nullable>
+	<ModuleId>$(AssemblyName)</ModuleId>
+	<ModuleName>$(AssemblyName)</ModuleName>
+	<GameFolder>$(BANNERLORD_GAME_DIR)</GameFolder>
+	<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+	<AssemblyName>$(MSBuildProjectName)</AssemblyName>
+	<Configurations>Debug;Release;DebugEditor;ReleaseEditor</Configurations>
+  </PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)'=='DebugEditor' OR '$(Configuration)'=='ReleaseEditor'">
+		<BuildForEditor>True</BuildForEditor>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)'=='Debug' OR '$(Configuration)'=='Release'">
+		<BuildForEditor>False</BuildForEditor>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <DefineConstants>_RGL_KEEP_ASSERTS$(DefineConstants)</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DefineConstants>_RGL_KEEP_ASSERTS$(DefineConstants)</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
+    <DefineConstants>_RGL_KEEP_ASSERTS$(DefineConstants)</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <DefineConstants>$(DefineConstants)</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseEditor|x64'">
+    <DefineConstants>Editor$(DefineConstants)</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DefineConstants>$(DefineConstants)</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseEditor|AnyCPU'">
+    <DefineConstants>Editor$(DefineConstants)</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
+    <DefineConstants>$(DefineConstants)</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseEditor|x86'">
+    <DefineConstants>Editor$(DefineConstants)</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugEditor|x64'">
+    <DefineConstants>Editor;_RGL_KEEP_ASSERTS$(DefineConstants)</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugEditor|x86'">
+    <DefineConstants>Editor;_RGL_KEEP_ASSERTS$(DefineConstants)</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugEditor|AnyCPU'">
+    <DefineConstants>Editor;_RGL_KEEP_ASSERTS$(DefineConstants)</DefineConstants>
+  </PropertyGroup>
+
+	<Target Name="PostBuildCopyToModules" AfterTargets="PostBuildEvent" Condition="$(ModuleId) != '' AND Exists($(GameFolder))">
+		<CallTarget Targets="CopyBinariesWindows"/>
+		<CallTarget Targets="CopyBinariesWindowsEditor"/>
+		<CallTarget Targets="CopyBinariesWindowsStore"/>
+		<CallTarget Targets="CopyModule"/>
+	</Target>
+
+	<Target Name="CopyBinariesWindows" AfterTargets="PostBuildEvent" Condition="$(BuildForEditor) == 'false' AND $(BuildForWindows) == 'true' AND $(ModuleId) != '' AND Exists($(GameFolder))">
+		<CreateDirectory Directory="$(GameFolder)/Modules/$(ModuleId)/bin/Win64_Shipping_Client" />
+		<CopyFolder FromDirectory="$(TargetDir)" ToDirectory="$(GameFolder)/Modules/$(ModuleId)/bin/Win64_Shipping_Client" Regex="$(PostBuildCopyToModulesRegex)" Clean="true" />
+	</Target>
+	<Target Name="CopyBinariesWindowsEditor" AfterTargets="PostBuildEvent" Condition="$(BuildForEditor) == 'true' AND $(BuildForWindows) == 'true' AND $(ModuleId) != '' AND Exists($(GameFolder))">
+		<CreateDirectory Directory="$(GameFolder)/Modules/$(ModuleId)/bin/Win64_Shipping_wEditor" />
+		<CopyFolder FromDirectory="$(TargetDir)" ToDirectory="$(GameFolder)/Modules/$(ModuleId)/bin/Win64_Shipping_wEditor" Regex="$(PostBuildCopyToModulesRegex)" Clean="true" />
+	</Target>
+
+  <ItemGroup>
+    <Reference Include="$(GameFolder)\bin\Win64_Shipping_wEditor\TaleWorlds.*.dll" Exclude="$(GameFolder)\bin\Win64_Shipping_wEditor\TaleWorlds.Native.dll">
+      <HintPath>%(Identity)</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="$(GameFolder)\Modules\Native\bin\Win64_Shipping_wEditor\*.dll">
+      <HintPath>%(Identity)</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="$(GameFolder)\Modules\SandBox\bin\Win64_Shipping_wEditor\*.dll">
+      <HintPath>%(Identity)</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="$(GameFolder)\Modules\SandBoxCore\bin\Win64_Shipping_wEditor\*.dll">
+      <HintPath>%(Identity)</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="$(GameFolder)\Modules\StoryMode\bin\Win64_Shipping_wEditor\*.dll">
+      <HintPath>%(Identity)</HintPath>
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Remove="$(NuGetPackageRoot)easyhook\2.7.7097\contentFiles\any\net40\EasyHook32Svc.exe" />
+    <Content Remove="$(NuGetPackageRoot)easyhook\2.7.7097\contentFiles\any\net40\EasyHook64Svc.exe" />
+  </ItemGroup>
+	
+  <ItemGroup>
+    <PackageReference Include="EasyHook" Version="2.7.7097" />
+    <PackageReference Include="IsExternalInit" Version="1.0.3" PrivateAssets="all" IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
+    <PackageReference Include="Bannerlord.BuildResources" Version="1.1.0.124" PrivateAssets="all" IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
+    <PackageReference Include="Lib.Harmony" Version="2.3.5" IncludeAssets="compile" />
+    <PackageReference Include="Harmony.Extensions" Version="3.2.0.77" PrivateAssets="all" IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
+    <PackageReference Include="BUTR.Harmony.Analyzer" Version="1.0.1.50" PrivateAssets="all" IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" PrivateAssets="all" IncludeAssets="compile" />
+  </ItemGroup>	
+</Project>
