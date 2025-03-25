@@ -1,4 +1,5 @@
-﻿using TaleWorlds.MountAndBlade;
+﻿using HarmonyLib;
+using TaleWorlds.MountAndBlade;
 
 
 namespace SampleMod
@@ -8,6 +9,7 @@ namespace SampleMod
         protected override void OnSubModuleLoad()
         {
             base.OnSubModuleLoad();
+            new Harmony("native_hook_sample").PatchAll();
         }
 
         protected override void OnSubModuleUnloaded()

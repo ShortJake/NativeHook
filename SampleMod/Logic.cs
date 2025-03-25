@@ -23,12 +23,6 @@ namespace SampleMod
             // AfterUpdateDynamicsFlags is triggered after the engine calculates the new AgentDynamicsFlags based on 
             // agent velocity, and based on EventControlFlags among other things
             // These flags control stuff related to agent motion including crouching, jumping, walking, etc...
-            NativeHookSubModule.AfterUpdateDynamicsFlags += AfterUpdateDynamicsFlags;
-        }
-
-        private void AfterUpdateDynamicsFlags(Agent agent, float dt, AgentDynamicsFlags oldFlags, AgentDynamicsFlags newFlags)
-        {
-            agent.GetComponent<FlyingAgentComponent>()?.AfterDynamicsUpdateFlags();
         }
 
         public override void OnRemoveBehavior()

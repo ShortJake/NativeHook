@@ -266,7 +266,7 @@ namespace NativeHook
             var oldFlags = *(AgentDynamicsFlags*)(dynamicsSystemPtr + rglAgentMovementAndDynamicsSystem.dynamics_flags).ToPointer();
             call_AgentMovementAndDynamicsSystem_UpdateFlags(dynamicsSystemPtr, missionPtr, dt, agentRecPtr, param);
             var newFlags = *(AgentDynamicsFlags*)(dynamicsSystemPtr + rglAgentMovementAndDynamicsSystem.dynamics_flags).ToPointer();
-            if (Mission.Current != null || AfterUpdateDynamicsFlags == null)
+            if (Mission.Current != null && AfterUpdateDynamicsFlags != null)
             {
                 var agentObjIndex = *(int*)(agentRecPtr + rglAgentRecord.owner_index).ToPointer();
                 var agent = Mission.Current.FindAgentWithIndex(agentObjIndex);

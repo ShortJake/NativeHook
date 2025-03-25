@@ -9,9 +9,9 @@ using TaleWorlds.MountAndBlade;
 namespace SampleMod
 {
     [HarmonyPatch(typeof(Mission), "FallDamageCallback")]
-    public class FallDamagePatch
+    public static class FallDamagePatch
     {
-        public bool Prefix(AttackCollisionData collisionData, Blow b, Agent attacker, Agent victim)
+        public static bool Prefix(AttackCollisionData collisionData, Blow b, Agent attacker, Agent victim)
         {
             // Don't apply fall damage if flying
             var flyingComp = victim.GetComponent<FlyingAgentComponent>();
