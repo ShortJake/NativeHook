@@ -16,7 +16,7 @@ namespace SampleMod
         private float _maxSpeed;
         private float _acceleration;
         private float _maxTurnSpeed;
-        private float _previousDirection;
+        private float _currentTurnVelocity;
         private float _angularAcceleration;
         private bool _isFlying;
         private Agent _effectiveAgent;
@@ -27,11 +27,11 @@ namespace SampleMod
         public FlyingAgentComponent(Agent agent) : base(agent)
         {
             _effectiveAgent = agent.MountAgent ?? agent;
-            _previousDirection = Agent.MovementDirectionAsAngle;
             _maxSpeed = 12f;
             _acceleration = 1.3f;
-            _maxTurnSpeed = 7f;
-            _angularAcceleration = 0.8f;
+            _currentTurnVelocity = 0f;
+            _maxTurnSpeed = 3f;
+            _angularAcceleration = 1.7f;
             _isFlying = false;
         }
 
@@ -52,7 +52,6 @@ namespace SampleMod
             // 0.4 seconds is the time used by native for jumps
             _effectiveAgent.SetIgnoreOnLandTimer(-0.1f);
             _isFlying = true;
-            _effectiveAgent.SetActionChannel(0, ActionIndexCache.act_none, true);
         }
         private void EndFlying()
         {
@@ -61,37 +60,27 @@ namespace SampleMod
         private void FlightTick(float inputRotation, Vec3 inputVector, float dt)
         {
             // Rotation
-            var turnVelocity = _previousDirection - Agent.MovementDirectionAsAngle;
-            turnVelocity += inputRotation * _angularAcceleration * dt;
-            turnVelocity *= 0.96f;
-            turnVelocity = MathF.Clamp(turnVelocity, -_maxTurnSpeed, _maxTurnSpeed);
-            var clampedAngle = MathF.AngleClamp(Agent.MovementDirectionAsAngle + turnVelocity * dt);
+            _currentTurnVelocity += inputRotation * _angularAcceleration;
+            _currentTurnVelocity *= 0.7f; // Friction
+            if (MathF.Abs(_currentTurnVelocity) < 0.01f) _currentTurnVelocity = 0f;
+            else _currentTurnVelocity = MathF.Clamp(_currentTurnVelocity, -_maxTurnSpeed, _maxTurnSpeed);
+            var clampedAngle = MathF.AngleClamp(Agent.MovementDirectionAsAngle + _currentTurnVelocity * dt);
             _effectiveAgent.SetMovementDirectionAsAngle(clampedAngle);
-            _previousDirection = Agent.MovementDirectionAsAngle;
 
             // Linear Velocity
             var velocity = _effectiveAgent.GetGlobalVelocity();
+            velocity *= 0.9f; // Friction
             if (velocity.Length > _maxSpeed)
             {
                 velocity = velocity.NormalizedCopy() * _maxSpeed;   
             }
-            velocity *= 0.9f; // Friction
             _effectiveAgent.SetGlobalVelocity(velocity);
             var force = Vec3.Zero;
             MathF.SinCos(_effectiveAgent.MovementDirectionAsAngle, out var sin, out var cos);
             force.y = (inputVector.Y * cos + inputVector.X * sin) * _acceleration;
             force.x = (-inputVector.Y * sin + inputVector.X * cos) * _acceleration;
-            force.z = MBGlobals.Gravity * dt + inputVector.Z * _acceleration;
+            force.z = MBGlobals.Gravity * dt + inputVector.Z * _acceleration * 0.9f;
             _effectiveAgent.SetExternalForce(force);
-        }
-
-        public void AfterDynamicsUpdateFlags()
-        {
-            // Game thinks the agent is falling if its Z velocity is negative, so we remove the falling flag manually
-            if (_isFlying)
-            {
-                _effectiveAgent.SetDynamicsFlags(_effectiveAgent.GetDynamicsFlags() & ~AgentDynamicsFlags.Falling);
-            }
         }
 
         public void PostAiTick(float dt)

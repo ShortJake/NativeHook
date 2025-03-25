@@ -16,7 +16,12 @@ namespace SampleMod
             // Don't apply fall damage if flying
             var flyingComp = victim.GetComponent<FlyingAgentComponent>();
             if (flyingComp != null && flyingComp.IsFlying) return false;
-            else return true;
+            else if (victim.RiderAgent != null)
+            {
+                flyingComp = victim.RiderAgent.GetComponent<FlyingAgentComponent>();
+                if (flyingComp != null && flyingComp.IsFlying) return false;
+            }
+            return true;
         }
     }
 }

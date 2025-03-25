@@ -57,9 +57,9 @@ namespace NativeHook
         public override void OnMissionBehaviorInitialize(Mission mission)
         {
             base.OnMissionBehaviorInitialize(mission);
-            #if DEBUG
+#if DEBUG
             mission.AddMissionBehavior(new DebugLogic());
-            #endif
+#endif
         }
         private void CreateHooks()
         {
@@ -195,7 +195,7 @@ namespace NativeHook
 
         #region AI Tick
         public delegate void OnPostAiTickDelegate(Agent agent, float dt);
-        public static event  OnPostAiTickDelegate OnPostAiTick;
+        public static event OnPostAiTickDelegate OnPostAiTick;
         private static IntPtr Agent_AiTickAddr;
         private static Agent_AiTickDelegate call_Agent_AiTick;
 #if Editor
@@ -206,7 +206,7 @@ namespace NativeHook
             call_Agent_AiTick(agentPtr, dt, param1, param2);
             var agentObjIndex = *(int*)(agentPtr + rglAgent.obj_id).ToPointer();
             var agentObj = GetManagedObjWithId.Invoke(null, new object[] { agentObjIndex }) as Agent;
-            if (Mission.Current == null || agentObj == null) return;
+            if (Mission.Current == null || agentObj == null || OnPostAgentTick == null) return;
             OnPostAiTick(agentObj, dt);
         }
 #else
@@ -217,7 +217,7 @@ namespace NativeHook
             call_Agent_AiTick(agentPtr, dt);
             var agentObjIndex = *(int*)(agentPtr + rglAgent.obj_id).ToPointer();
             var agentObj = GetManagedObjWithId.Invoke(null, new object[] { agentObjIndex }) as Agent;
-            if (Mission.Current == null || agentObj == null) return;
+            if (Mission.Current == null || agentObj == null || OnPostAgentTick == null) return;
             OnPostAiTick(agentObj, dt);
         }
 #endif
@@ -237,7 +237,7 @@ namespace NativeHook
             call_Agent_Tick(agentPtr, dt, param1, param2);
             var agentObjIndex = *(int*)(agentPtr + rglAgent.obj_id).ToPointer();
             var agentObj = GetManagedObjWithId.Invoke(null, new object[] { agentObjIndex }) as Agent;
-            if (Mission.Current == null || agentObj == null) return;
+            if (Mission.Current == null || agentObj == null || OnPostAgentTick == null) return;
             OnPostAgentTick(agentObj, dt);
         }
 #else
@@ -248,7 +248,7 @@ namespace NativeHook
             call_Agent_Tick(agentPtr, dt);
             var agentObjIndex = *(int*)(agentPtr + rglAgent.obj_id).ToPointer();
             var agentObj = GetManagedObjWithId.Invoke(null, new object[] { agentObjIndex }) as Agent;
-            if (Mission.Current == null || agentObj == null) return;
+            if (Mission.Current == null || agentObj == null || OnPostAgentTick == null) return;
             OnPostAgentTick(agentObj, dt);
         }
 #endif
@@ -266,7 +266,7 @@ namespace NativeHook
             var oldFlags = *(AgentDynamicsFlags*)(dynamicsSystemPtr + rglAgentMovementAndDynamicsSystem.dynamics_flags).ToPointer();
             call_AgentMovementAndDynamicsSystem_UpdateFlags(dynamicsSystemPtr, missionPtr, dt, agentRecPtr, param);
             var newFlags = *(AgentDynamicsFlags*)(dynamicsSystemPtr + rglAgentMovementAndDynamicsSystem.dynamics_flags).ToPointer();
-            if (Mission.Current != null)
+            if (Mission.Current != null || AfterUpdateDynamicsFlags == null)
             {
                 var agentObjIndex = *(int*)(agentRecPtr + rglAgentRecord.owner_index).ToPointer();
                 var agent = Mission.Current.FindAgentWithIndex(agentObjIndex);
