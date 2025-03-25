@@ -27,7 +27,7 @@ namespace SampleMod
         public FlyingAgentComponent(Agent agent) : base(agent)
         {
             _effectiveAgent = agent.MountAgent ?? agent;
-            _maxSpeed = 12f;
+            _maxSpeed = 6f;
             _acceleration = 1.3f;
             _currentTurnVelocity = 0f;
             _maxTurnSpeed = 3f;
@@ -59,6 +59,8 @@ namespace SampleMod
         }
         private void FlightTick(float inputRotation, Vec3 inputVector, float dt)
         {
+            _effectiveAgent.SetOnLandState(AgentOnLandFlags.NotOnLand);
+
             // Rotation
             _currentTurnVelocity += inputRotation * _angularAcceleration;
             _currentTurnVelocity *= 0.7f; // Friction
@@ -70,9 +72,10 @@ namespace SampleMod
             // Linear Velocity
             var velocity = _effectiveAgent.GetGlobalVelocity();
             velocity *= 0.9f; // Friction
-            if (velocity.Length > _maxSpeed)
+            var adjustedMaxSpeed = Agent.HasMount ? _maxSpeed * 2f : _maxSpeed;
+            if (velocity.Length > adjustedMaxSpeed)
             {
-                velocity = velocity.NormalizedCopy() * _maxSpeed;   
+                velocity = velocity.NormalizedCopy() * adjustedMaxSpeed;   
             }
             _effectiveAgent.SetGlobalVelocity(velocity);
             var force = Vec3.Zero;
@@ -85,19 +88,53 @@ namespace SampleMod
 
         public void PostAiTick(float dt)
         {
-
+            var relativeTargetZ = 0f;
+            var targetAgent = Agent.GetTargetAgent();
+            var targetIsFlying = false;
+            if (targetAgent != null)
+            {
+                var comp = targetAgent.GetComponent<FlyingAgentComponent>();
+                targetIsFlying = comp.IsFlying;
+                relativeTargetZ = targetAgent.Position.Z - Agent.Position.Z;
+            }
+            if (!_isFlying && targetIsFlying)
+            {
+                if (relativeTargetZ > 1.4f || _effectiveAgent.Velocity.Length > 7f)
+                    StartFlying();
+            }
+            // End flying if on ground
+            // Problem with using Agent.IsOnLand() is that colliding with an agent counts as being on land
+            // AgentDynamicsFlags.CollidedWithObjectBelow, however, is set to true the moment the agent hits the ground
+            else if (_isFlying && (_effectiveAgent.GetDynamicsFlags() & AgentDynamicsFlags.CollidedWithObjectBelow) != 0)
+            {
+                EndFlying();
+            }
+            // Handle flying movement
+            if (_isFlying)
+            {
+                var inputRot = 0f;
+                var inputVector = Agent.MovementInputVector.ToVec3();
+                if (Agent.HasMount)
+                {
+                    inputRot = -inputVector.x;
+                    inputVector.x = 0f;
+                }
+                inputVector.z = relativeTargetZ > 0.2f ? 1f : relativeTargetZ < 0f ? -1f : 0;
+                FlightTick(inputRot, inputVector, dt);
+            }
         }
 
         public void PlayerTick(float dt)
         {
-            var onLand = _effectiveAgent.IsOnLand();
-            if (!_isFlying && !onLand)
+            if (!_isFlying && !_effectiveAgent.IsOnLand())
             {
                 if (Input.IsKeyPressed(_flyKey) || _effectiveAgent.Velocity.Length > 7f)
                 StartFlying();
             }
             // End flying if on ground
-            else if (_isFlying && (onLand || Input.IsKeyPressed(_stopKey)))
+            // Problem with using Agent.IsOnLand() is that colliding with an agent counts as being on land
+            // AgentDynamicsFlags.CollidedWithObjectBelow, however, is set to true the moment the agent hits the ground
+            else if (_isFlying && (_effectiveAgent.GetDynamicsFlags() & AgentDynamicsFlags.CollidedWithObjectBelow) != 0 || Input.IsKeyPressed(_stopKey))
             {
                 EndFlying();
             }

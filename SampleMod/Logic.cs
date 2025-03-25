@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using TaleWorlds.MountAndBlade;
 using NativeHook;
 using TaleWorlds.Core;
+using TaleWorlds.Library;
 
 namespace SampleMod
 {
@@ -35,7 +36,7 @@ namespace SampleMod
         public override void OnMissionTick(float dt)
         {
             if (Agent.Main != null)
-            {
+            {  
                 Agent.Main.GetComponent<FlyingAgentComponent>()?.PlayerTick(dt);
             }
         }
