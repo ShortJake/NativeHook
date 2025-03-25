@@ -48,7 +48,8 @@ namespace SampleMod
 
         private void StartFlying()
         {
-            // For force to affect an agent, they must not be on land
+            // For SetExternalForce and SetGlobalVelocity to affect an agent, they must not be on land
+            // IgnoreOnLandTimer causes the agent to act as if not on land even if they are while the timer is negative
             // 0.4 seconds is the time used by native for jumps
             _effectiveAgent.SetIgnoreOnLandTimer(-0.1f);
             _isFlying = true;
