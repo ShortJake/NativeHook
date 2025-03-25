@@ -206,8 +206,10 @@ namespace NativeHook
             call_Agent_AiTick(agentPtr, dt, param1, param2);
             var agentObjIndex = *(int*)(agentPtr + rglAgent.obj_id).ToPointer();
             var agentObj = GetManagedObjWithId.Invoke(null, new object[] { agentObjIndex }) as Agent;
-            if (Mission.Current == null || agentObj == null || OnPostAgentTick == null) return;
-            OnPostAiTick(agentObj, dt);
+            // Copying event to a local variable prevents a race condition when another thread unsubscribes from event
+            var ev = OnPostAiTick;
+            if (Mission.Current == null || agentObj == null || ev == null) return;
+            ev(agentObj, dt);
         }
 #else
         [UnmanagedFunctionPointer(CallingConvention.ThisCall, SetLastError = true)]
@@ -217,8 +219,10 @@ namespace NativeHook
             call_Agent_AiTick(agentPtr, dt);
             var agentObjIndex = *(int*)(agentPtr + rglAgent.obj_id).ToPointer();
             var agentObj = GetManagedObjWithId.Invoke(null, new object[] { agentObjIndex }) as Agent;
-            if (Mission.Current == null || agentObj == null || OnPostAgentTick == null) return;
-            OnPostAiTick(agentObj, dt);
+            // Copying event to a local variable prevents a race condition when another thread unsubscribes from event
+            var ev = OnPostAiTick;
+            if (Mission.Current == null || agentObj == null || ev == null) return;
+            ev(agentObj, dt);
         }
 #endif
 
@@ -237,8 +241,10 @@ namespace NativeHook
             call_Agent_Tick(agentPtr, dt, param1, param2);
             var agentObjIndex = *(int*)(agentPtr + rglAgent.obj_id).ToPointer();
             var agentObj = GetManagedObjWithId.Invoke(null, new object[] { agentObjIndex }) as Agent;
-            if (Mission.Current == null || agentObj == null || OnPostAgentTick == null) return;
-            OnPostAgentTick(agentObj, dt);
+            // Copying event to a local variable prevents a race condition when another thread unsubscribes from event
+            var ev = OnPostAgentTick;
+            if (Mission.Current == null || agentObj == null || ev == null) return;
+            ev(agentObj, dt);
         }
 #else
         [UnmanagedFunctionPointer(CallingConvention.ThisCall, SetLastError = true)]
@@ -248,8 +254,10 @@ namespace NativeHook
             call_Agent_Tick(agentPtr, dt);
             var agentObjIndex = *(int*)(agentPtr + rglAgent.obj_id).ToPointer();
             var agentObj = GetManagedObjWithId.Invoke(null, new object[] { agentObjIndex }) as Agent;
-            if (Mission.Current == null || agentObj == null || OnPostAgentTick == null) return;
-            OnPostAgentTick(agentObj, dt);
+            // Copying event to a local variable prevents a race condition when another thread unsubscribes from event
+            var ev = OnPostAgentTick;
+            if (Mission.Current == null || agentObj == null || ev == null) return;
+            ev(agentObj, dt);
         }
 #endif
         #endregion
@@ -266,12 +274,14 @@ namespace NativeHook
             var oldFlags = *(AgentDynamicsFlags*)(dynamicsSystemPtr + rglAgentMovementAndDynamicsSystem.dynamics_flags).ToPointer();
             call_AgentMovementAndDynamicsSystem_UpdateFlags(dynamicsSystemPtr, missionPtr, dt, agentRecPtr, param);
             var newFlags = *(AgentDynamicsFlags*)(dynamicsSystemPtr + rglAgentMovementAndDynamicsSystem.dynamics_flags).ToPointer();
-            if (Mission.Current != null && AfterUpdateDynamicsFlags != null)
+            // Copying event to a local variable prevents a race condition when another thread unsubscribes from event
+            var ev = AfterUpdateDynamicsFlags;
+            if (Mission.Current != null && ev != null)
             {
                 var agentObjIndex = *(int*)(agentRecPtr + rglAgentRecord.owner_index).ToPointer();
                 var agent = Mission.Current.FindAgentWithIndex(agentObjIndex);
                 if (agent == null) return;
-                AfterUpdateDynamicsFlags(agent, dt, oldFlags, newFlags);
+                ev(agent, dt, oldFlags, newFlags);
             }
         }
 #endregion
