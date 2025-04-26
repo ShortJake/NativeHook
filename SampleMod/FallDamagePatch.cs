@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TaleWorlds.Engine;
 using TaleWorlds.MountAndBlade;
 
 namespace SampleMod
@@ -24,4 +25,30 @@ namespace SampleMod
             return true;
         }
     }
+
+    [HarmonyPatch(typeof(PhysicsMaterial), nameof(PhysicsMaterial.GetFlags))]
+    public static class GetFlagsPatch
+    {
+        public static void Postfix(ref PhysicsMaterialFlags __result)
+        {
+            var logic = Mission.Current?.GetMissionBehavior<Logic>();
+            if (logic == null) return;
+            if (logic.EnableIgnoreShield)
+            {
+                __result |= PhysicsMaterialFlags.AttacksCanPassThrough;
+            }
+        }
+    }
+    [HarmonyPatch(typeof(Mission), "MissileHitCallback")]
+    public static class MissileHitCallbackPatch
+    {
+        public static void Prefix(AttackCollisionData collisionData, Agent attacker)
+        {
+            var logic = Mission.Current?.GetMissionBehavior<Logic>();
+            if (logic == null) return;
+            if (collisionData.AttackBlockedWithShield && attacker == Agent.Main) logic.EnableIgnoreShield = true;
+            else logic.EnableIgnoreShield = false;
+        }
+    }
+    
 }

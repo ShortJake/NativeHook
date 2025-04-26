@@ -67,7 +67,10 @@ namespace NativeHook
             CreateHook(Agent_TickAddr, new Agent_TickDelegate(Agent_Tick));
             CreateHook(AgentMovementAndDynamicsSystem_UpdateFlagsAddr, new AgentMovementAndDynamicsSystem_UpdateFlagsDelegate(AgentMovementAndDynamicsSystem_UpdateFlags));
 #if DEBUG
-            CreateHook(DebugMethod_Addr, new DebugMethodDelegate(OnDebugMethod));
+            unsafe
+            {
+                CreateHook(DebugMethod_Addr, new DebugMethodDelegate(OnDebugMethod));
+            }
 #endif
         }
         private void GetHookedMethodAddresses()
@@ -83,7 +86,7 @@ namespace NativeHook
             AgentMovementAndDynamicsSystem_UpdateFlagsAddr = ScanForFirstResult(buffer, "40 55 57 48 8b ec 48 83 ec 48 48 89");
 #endif
 #if DEBUG
-            var hits = ScanFor(buffer, "48 8b c4 48 89 58 20 57 48 83 ec 70 0f 29 70 e8 49 8b f8 44 0f 29 40 c8 48 8b d9 48 89 70 18 44");
+            var hits = ScanFor(buffer, DebugMethodSignature);
             if (hits.Count > 0) DebugMethod_Addr = hits[0];
 #endif
         }
@@ -186,10 +189,11 @@ namespace NativeHook
                 hook.ThreadACL.SetExclusiveACL(new int[] { });
                 NativeHooks.Add(hook);
             }
-            catch
+            catch (Exception ex)
             {
                 InformationManager.DisplayMessage(new InformationMessage("NativeHook Error! Error hooking '" + functionName + "'"
                 , ErrorColor));
+                throw ex;
             }
         }
 
@@ -202,7 +206,7 @@ namespace NativeHook
         [UnmanagedFunctionPointer(CallingConvention.ThisCall, SetLastError = true)]
         private delegate void Agent_AiTickDelegate(UIntPtr agentPtr, float dt, UIntPtr param1, UIntPtr param2);
         unsafe static private void Agent_AiTick(UIntPtr agentPtr, float dt, UIntPtr param1, UIntPtr param2)
-        { 
+        {
             call_Agent_AiTick(agentPtr, dt, param1, param2);
             var agentObjIndex = *(int*)(agentPtr + rglAgent.obj_id).ToPointer();
             var agentObj = GetManagedObjWithId.Invoke(null, new object[] { agentObjIndex }) as Agent;
@@ -284,18 +288,42 @@ namespace NativeHook
                 ev(agent, dt, oldFlags, newFlags);
             }
         }
-#endregion
+        #endregion
 
 #if DEBUG
+        private static string DebugMethodSignature = "40 55 57 48 8d ac 24 28 ec ff ff b8 d8 14 00 00 e8 eb f0 82 00 48 2b e0 48 8b";
         private static DebugMethodDelegate call_DebugMethod;
         private static IntPtr DebugMethod_Addr = IntPtr.Zero;
         [UnmanagedFunctionPointer(CallingConvention.ThisCall, SetLastError = true)]
-        private delegate void DebugMethodDelegate(ulong dynamicsSystemPtr, float dt, ulong agentRecPtr, ulong debug);
-        unsafe static private void OnDebugMethod(ulong dynamicsSystemPtr, float dt, ulong agentRecPtr, ulong debug)
+        private delegate void DebugMethodDelegate(UIntPtr animTree, UIntPtr skeleton, UIntPtr param, UIntPtr param2);
+        unsafe static private void OnDebugMethod(UIntPtr animTree, UIntPtr skeleton, UIntPtr param, UIntPtr param2)
         {
-            call_DebugMethod(dynamicsSystemPtr, dt, agentRecPtr, debug);
-            if (Input.IsKeyDown(InputKey.N))
-                DebugLogic.SetPropertyUnsafe<Vec2>(Vec2.Forward, Agent.Main.GetPointer(), 0x20, 0x48);
+            call_DebugMethod(animTree, skeleton, param, param2);
+            if (Agent.Main != null && Agent.Main.AgentVisuals.GetSkeleton()?.Pointer == skeleton)
+            {
+                var index = 13;
+                var skelIndex = DebugLogic.GetPropertyUnsafe<int>(skeleton, 0x44);
+                var combinedIndex = (long)(index + skelIndex);
+                var dat = (NativeDLLAddr + 0x1725990).ToInt64();
+                long boneMat3Buffer = *(int*)(dat + 0xe78) * 0x128 + dat + 0xc28;
+                long chunkId = combinedIndex >> 13;
+                var m = (Mat3*)((boneMat3Buffer + 8L + chunkId * 8L) + (long)(combinedIndex + chunkId * -8192L) * 0x40);
+                if (Input.IsKeyDown(InputKey.M))
+                {
+                }
+                InformationManager.DisplayMessage(new InformationMessage(m->ToString()));
+            }
+        }
+
+        public struct BoneTransformation
+        {
+            public Quaternion q;
+            public Vec3 o;
+            public BoneTransformation(Quaternion quat, Vec3 pos)
+            {
+                q = quat;
+                o = pos;
+            }
         }
 #endif
 

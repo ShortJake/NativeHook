@@ -358,7 +358,7 @@ namespace NativeHook
         /// <summary>
         /// Start the main jump looping animation
         /// </summary>
-        JumpLoopAnimStart = 32_768, //Spawns particles for jump?
+        JumpLoopAnimStart = 32_768,
         Falling = 65_536,
         LandedHeavy = 131_072,
         LandedLight = 262_144,

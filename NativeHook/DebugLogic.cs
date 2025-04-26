@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Reflection;
 using TaleWorlds.Core;
 using TaleWorlds.Engine;
 using TaleWorlds.InputSystem;
@@ -37,11 +38,32 @@ namespace NativeHook
         public override void OnMissionTick(float dt)
         {
             if (Agent.Main == null) return;
-            var agent = Agent.Main.MountAgent ?? Agent.Main;
+            /*var agent = Agent.Main.MountAgent ?? Agent.Main;
+            if (Input.IsKeyDown(InputKey.M))
+            {
+                for (ulong i = 13; i < 15; i++)
+                {
+                    var frame = GetPropertyUnsafe<MatrixFrame>(Agent.Main.AgentVisuals.GetSkeleton().Pointer, 0x18, 0x100 * i + 0xa0);
+                    frame.Advance(2f);
+                    SetPropertyUnsafe(Vec3.One * 5f, Agent.Main.AgentVisuals.GetSkeleton().Pointer, 0x18, 0x100 * i + 0x0);
+                }
+                
+            }
+            else if (Input.IsKeyDown(InputKey.N))
+            {
+                for (ulong i = 13; i < 15; i++)
+                {
+                    var index = 15Ul;
+                    var frame = GetPropertyUnsafe<MatrixFrame>(Agent.Main.AgentVisuals.GetSkeleton().Pointer, 0x18, 0x100 * i + 0xa0);
+                    frame.Scale(Vec3.One * 0.9f);
+                    SetPropertyUnsafe(frame, Agent.Main.AgentVisuals.GetSkeleton().Pointer, 0x18, 0x100 * i + 0xa0);
+                }
+            }*/
         }
         public override void OnPreMissionTick(float dt)
         {
             if (Agent.Main == null) return;
+            
         }
 
         private void OnAiAgentTick(Agent agent, float dt)
@@ -51,8 +73,7 @@ namespace NativeHook
 
         private void OnPostAgentTick(Agent agent, float dt)
         {
-            if (agent != Agent.Main || !agent.IsActive()) return;
-            
+            if (agent != Agent.Main || !agent.IsActive()) return;    
         }
 
         private void AfterUpdateDynamicsFlags(Agent agent, float dt, AgentDynamicsFlags oldFlags, AgentDynamicsFlags newFlags)

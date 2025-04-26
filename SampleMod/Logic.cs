@@ -7,11 +7,13 @@ using TaleWorlds.MountAndBlade;
 using NativeHook;
 using TaleWorlds.Core;
 using TaleWorlds.Library;
+using TaleWorlds.InputSystem;
 
 namespace SampleMod
 {
     public class Logic : MissionLogic
     {
+        public bool EnableIgnoreShield;
         public Logic()
         {
             // Subscribe to NativeHook's PostAiTick event
@@ -20,7 +22,7 @@ namespace SampleMod
             NativeHookSubModule.OnPostAiTick += OnPostAiTick;
 
             // PostAgentTick is similar but for all agents not just AI
-
+            NativeHookSubModule.OnPostAgentTick += OnPostAgentTick;
             // AfterUpdateDynamicsFlags is triggered after the engine calculates the new AgentDynamicsFlags based on 
             // agent velocity, and based on EventControlFlags among other things
             // These flags control stuff related to agent motion including crouching, jumping, walking, etc...
@@ -56,7 +58,7 @@ namespace SampleMod
         public override void OnMissionTick(float dt)
         {
             if (Agent.Main != null)
-            {  
+            {
                 Agent.Main.GetComponent<FlyingAgentComponent>()?.PlayerTick(dt);
             }
         }
@@ -65,6 +67,45 @@ namespace SampleMod
         {
             agent.GetComponent<FlyingAgentComponent>()?.PostAiTick(dt);
             agent.GetComponent<AIKickComponent>()?.PostAiTick(dt);
+
+        }
+        private void OnPostAgentTick(Agent agent, float dt)
+        {
+            if (!agent.IsHuman || agent == Agent.Main) return;
+            agent.MovementFlags &= ~Agent.MovementControlFlag.AttackMask;
+            /*agent.MovementFlags &= ~Agent.MovementControlFlag.DefendMask;
+            EquipmentIndex polearm = EquipmentIndex.None;
+            for (var i = EquipmentIndex.Weapon0; i < EquipmentIndex.NumPrimaryWeaponSlots; i++)
+            {
+                if (agent.Equipment[i].CurrentUsageItem != null && agent.Equipment[i].CurrentUsageItem.IsPolearm)
+                {
+                    polearm = i;
+                    break;
+                }
+            }
+            if (agent.WieldedWeapon.Item != agent.Equipment[polearm].Item)
+            {
+                agent.TryToWieldWeaponInSlot(polearm, Agent.WeaponWieldActionType.WithAnimation, false);
+            }
+            else
+            {
+                agent.EventControlFlags &= ~Agent.EventControlFlag.Wield0;
+                agent.EventControlFlags &= ~Agent.EventControlFlag.Wield1;
+                agent.EventControlFlags &= ~Agent.EventControlFlag.Wield2;
+                agent.EventControlFlags &= ~Agent.EventControlFlag.Wield3;
+            }
+            if (agent.WieldedWeapon.CurrentUsageItem != null && agent.WieldedWeapon.CurrentUsageItem.IsPolearm)
+            {
+                if (Input.IsKeyPressed(InputKey.H) && agent.WieldedWeapon.CurrentUsageItem.ItemUsage != "polearm_bracing")
+                {
+                    agent.EventControlFlags |= Agent.EventControlFlag.ToggleAlternativeWeapon;
+                }
+                else
+                {
+                    agent.EventControlFlags &= ~Agent.EventControlFlag.ToggleAlternativeWeapon;
+                }
+            }
+            InformationManager.DisplayMessage(new InformationMessage(agent.EventControlFlags.ToString()));*/
         }
 
         public override void OnAgentBuild(Agent agent, Banner banner)
