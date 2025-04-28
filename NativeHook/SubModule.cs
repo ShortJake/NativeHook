@@ -15,6 +15,8 @@ using Reloaded.Hooks;
 using Reloaded.Hooks.Definitions;
 using Reloaded.Hooks.Definitions.X64;
 using CallingConventions = Reloaded.Hooks.Definitions.X64.CallingConventions;
+using Reloaded.Hooks.Definitions.X64;
+using Reloaded.Hooks.Definitions;
 
 namespace NativeHook
 {
@@ -188,6 +190,7 @@ namespace NativeHook
                 callDelField.SetValue(this, Marshal.GetDelegateForFunctionPointer(address, functionDelegate.GetType()));
                 var hook = LocalHook.Create(address, functionDelegate, null);
                 hook.ThreadACL.SetExclusiveACL(new int[] { });
+                var hook = ReloadedHooks.Instance.CreateHook<TFunction>(functionDelegate, address.ToInt64()).Activate();
                 NativeHooks.Add(hook);
             }
             catch
@@ -320,6 +323,7 @@ namespace NativeHook
         private static IntPtr DebugMethod_Addr = IntPtr.Zero;
 <<<<<<< Updated upstream
         [UnmanagedFunctionPointer(CallingConvention.ThisCall, SetLastError = true)]
+        [Function(Reloaded.Hooks.Definitions.X64.CallingConventions.Microsoft)]
         private delegate void DebugMethodDelegate(ulong dynamicsSystemPtr, float dt, ulong agentRecPtr, ulong debug);
         unsafe static private void OnDebugMethod(ulong dynamicsSystemPtr, float dt, ulong agentRecPtr, ulong debug)
 =======

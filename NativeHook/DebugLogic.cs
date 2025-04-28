@@ -36,7 +36,7 @@ namespace NativeHook
 
         public override void OnMissionTick(float dt)
         {
-            if (Agent.Main == null) return;
+            if (Agent.Main == null) return;            
             var agent = Agent.Main.MountAgent ?? Agent.Main;
         }
         public override void OnPreMissionTick(float dt)
