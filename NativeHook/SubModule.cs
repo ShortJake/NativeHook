@@ -1,7 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 using System;
 using TaleWorlds.MountAndBlade;
-using EasyHook;
 using System.Reflection;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -10,6 +9,12 @@ using TaleWorlds.DotNet;
 using TaleWorlds.Library;
 using TaleWorlds.InputSystem;
 using TaleWorlds.Core;
+using System.Net;
+using System.Runtime.CompilerServices;
+using Reloaded.Hooks;
+using Reloaded.Hooks.Definitions;
+using Reloaded.Hooks.Definitions.X64;
+using CallingConventions = Reloaded.Hooks.Definitions.X64.CallingConventions;
 
 namespace NativeHook
 {
@@ -19,7 +24,7 @@ namespace NativeHook
         public static IntPtr NativeDLLAddr;
         private static int NativeDLLSize;
         //Hooks will be disposed of if kept as local variables
-        private static List<LocalHook> NativeHooks;
+        private static List<IHook> NativeHooks;
         // Returns the managed object that corresponds to this ID. ID is at an offset of 0x18 for agents
         private static MethodBase GetManagedObjWithId;
 
@@ -40,7 +45,7 @@ namespace NativeHook
                 InformationManager.DisplayMessage(new InformationMessage("NativeHook Error! Could not find TaleWorlds.Native.dll", ErrorColor));
                 return;
             }
-            NativeHooks = new List<LocalHook>();
+            NativeHooks = new List<IHook>();
             GetManagedObjWithId = AccessTools.Method(typeof(DotNetObject), "GetManagedObjectWithId", new Type[] { typeof(int) });
             GetHookedMethodAddresses();
             CreateHooks();
@@ -48,10 +53,6 @@ namespace NativeHook
         protected override void OnSubModuleUnloaded()
         {
             base.OnSubModuleUnloaded();
-            foreach (var hook in NativeHooks)
-            {
-                hook.Dispose();
-            }
             NativeHooks.Clear();
         }
         public override void OnMissionBehaviorInitialize(Mission mission)
@@ -67,7 +68,14 @@ namespace NativeHook
             CreateHook(Agent_TickAddr, new Agent_TickDelegate(Agent_Tick));
             CreateHook(AgentMovementAndDynamicsSystem_UpdateFlagsAddr, new AgentMovementAndDynamicsSystem_UpdateFlagsDelegate(AgentMovementAndDynamicsSystem_UpdateFlags));
 #if DEBUG
+<<<<<<< Updated upstream
             CreateHook(DebugMethod_Addr, new DebugMethodDelegate(OnDebugMethod));
+=======
+            unsafe
+            {
+                //CreateHook(DebugMethod_Addr, new DebugMethodDelegate(OnDebugMethod));
+            }
+>>>>>>> Stashed changes
 #endif
         }
         private void GetHookedMethodAddresses()
@@ -162,25 +170,21 @@ namespace NativeHook
             }
             return hits;
         }
-        private void CreateHook(IntPtr address, Delegate functionDelegate)
+        private unsafe void CreateHook<TFunction>(IntPtr address, TFunction functionDelegate) where TFunction : Delegate
         {
-            var functionName = functionDelegate.GetType().Name;
-            functionName = functionName.Replace("Delegate", String.Empty);
-            if (address == IntPtr.Zero)
+            var locker = new object();
+            lock (locker)
             {
-                InformationManager.DisplayMessage(new InformationMessage("NativeHook Error! Invalid adddress for '" + functionName + "'. Not hooking!"
-                , ErrorColor));
-                return;
-            }
-            try
-            {
-                var callDelField = AccessTools.Field(this.GetType(), "call_" + functionName);
-                if (callDelField == null)
+
+                var functionName = functionDelegate.GetType().Name;
+                functionName = functionName.Replace("Delegate", String.Empty);
+                if (address == IntPtr.Zero)
                 {
-                    InformationManager.DisplayMessage(new InformationMessage("NativeHook Error! Function name doesnt match for " + functionName
-                , ErrorColor));
+                    InformationManager.DisplayMessage(new InformationMessage("NativeHook Error! Invalid adddress for '" + functionName + "'. Not hooking!"
+                    , ErrorColor));
                     return;
                 }
+<<<<<<< Updated upstream
                 callDelField.SetValue(this, Marshal.GetDelegateForFunctionPointer(address, functionDelegate.GetType()));
                 var hook = LocalHook.Create(address, functionDelegate, null);
                 hook.ThreadACL.SetExclusiveACL(new int[] { });
@@ -190,6 +194,31 @@ namespace NativeHook
             {
                 InformationManager.DisplayMessage(new InformationMessage("NativeHook Error! Error hooking '" + functionName + "'"
                 , ErrorColor));
+=======
+                try
+                {
+                    var callDelField = AccessTools.Field(this.GetType(), "call_" + functionName);
+                    if (callDelField == null)
+                    {
+                        InformationManager.DisplayMessage(new InformationMessage("NativeHook Error! Function name doesnt match for " + functionName
+                    , ErrorColor));
+                        return;
+                    }
+
+                    //var wrapperAddress = ReloadedHooks.Instance.CreateWrapper<TFunction>(address.ToInt64());
+                    //callDelField.SetValue(this, wrapperAddress);
+                    var hook = ReloadedHooks.Instance.CreateHook<TFunction>(functionDelegate, address.ToInt64());
+                    hook.Activate();
+                    NativeHooks.Add(hook);
+                    callDelField.SetValue(this, ReloadedHooks.Instance.CreateWrapper<TFunction>(hook.OriginalFunctionWrapperAddress.ToInt64(), out _));
+                }
+                catch (Exception ex)
+                {
+                    InformationManager.DisplayMessage(new InformationMessage("NativeHook Error! Error hooking '" + functionName + "'"
+                    , ErrorColor));
+                    throw ex;
+                }
+>>>>>>> Stashed changes
             }
         }
 
@@ -199,7 +228,7 @@ namespace NativeHook
         private static IntPtr Agent_AiTickAddr;
         private static Agent_AiTickDelegate call_Agent_AiTick;
 #if Editor
-        [UnmanagedFunctionPointer(CallingConvention.ThisCall, SetLastError = true)]
+        [Function(CallingConventions.Microsoft)]
         private delegate void Agent_AiTickDelegate(UIntPtr agentPtr, float dt, UIntPtr param1, UIntPtr param2);
         unsafe static private void Agent_AiTick(UIntPtr agentPtr, float dt, UIntPtr param1, UIntPtr param2)
         { 
@@ -234,7 +263,7 @@ namespace NativeHook
         private static IntPtr Agent_TickAddr;
         private static Agent_TickDelegate call_Agent_Tick;
 #if Editor
-        [UnmanagedFunctionPointer(CallingConvention.ThisCall, SetLastError = true)]
+        [Function(CallingConventions.Microsoft)]
         private delegate void Agent_TickDelegate(UIntPtr agentPtr, float dt, UIntPtr param1, UIntPtr param2);
         unsafe static private void Agent_Tick(UIntPtr agentPtr, float dt, UIntPtr param1, UIntPtr param2)
         {
@@ -267,7 +296,7 @@ namespace NativeHook
         public static event AfterUpdateDynamicsFlagsDelegate AfterUpdateDynamicsFlags;
         private static IntPtr AgentMovementAndDynamicsSystem_UpdateFlagsAddr;
         private static AgentMovementAndDynamicsSystem_UpdateFlagsDelegate call_AgentMovementAndDynamicsSystem_UpdateFlags;
-        [UnmanagedFunctionPointer(CallingConvention.ThisCall, SetLastError = true)]
+        [Function(CallingConventions.Microsoft)]
         private delegate void AgentMovementAndDynamicsSystem_UpdateFlagsDelegate(UIntPtr dynamicsSystemPtr, UIntPtr missionPtr, float dt, UIntPtr agentRecPtr, byte param);
         unsafe static private void AgentMovementAndDynamicsSystem_UpdateFlags(UIntPtr dynamicsSystemPtr, UIntPtr missionPtr, float dt, UIntPtr agentRecPtr, byte param)
         {
@@ -289,9 +318,15 @@ namespace NativeHook
 #if DEBUG
         private static DebugMethodDelegate call_DebugMethod;
         private static IntPtr DebugMethod_Addr = IntPtr.Zero;
+<<<<<<< Updated upstream
         [UnmanagedFunctionPointer(CallingConvention.ThisCall, SetLastError = true)]
         private delegate void DebugMethodDelegate(ulong dynamicsSystemPtr, float dt, ulong agentRecPtr, ulong debug);
         unsafe static private void OnDebugMethod(ulong dynamicsSystemPtr, float dt, ulong agentRecPtr, ulong debug)
+=======
+        [Function(CallingConventions.Microsoft)]
+        private delegate void DebugMethodDelegate(UIntPtr animTree, UIntPtr skeleton, UIntPtr param, UIntPtr param2);
+        unsafe static private void OnDebugMethod(UIntPtr animTree, UIntPtr skeleton, UIntPtr param, UIntPtr param2)
+>>>>>>> Stashed changes
         {
             call_DebugMethod(dynamicsSystemPtr, dt, agentRecPtr, debug);
             if (Input.IsKeyDown(InputKey.N))

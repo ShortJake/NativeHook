@@ -47,12 +47,21 @@ namespace NativeHook
         private void OnAiAgentTick(Agent agent, float dt)
         {
             if (!agent.IsHuman) return;
+            if (Input.IsKeyDown(InputKey.N))
+            {
+                if (agent.MountAgent != null) agent.MountAgent.SetMovementVelocity(-Vec2.Forward * 4f);
+                else agent.SetMovementVelocity(-Vec2.Forward * 4f);
+            }
         }
 
         private void OnPostAgentTick(Agent agent, float dt)
         {
             if (agent != Agent.Main || !agent.IsActive()) return;
+<<<<<<< Updated upstream
             
+=======
+            if (Input.IsKeyDown(InputKey.M)) agent.SetGlobalVelocity(Vec3.Up * 2f);
+>>>>>>> Stashed changes
         }
 
         private void AfterUpdateDynamicsFlags(Agent agent, float dt, AgentDynamicsFlags oldFlags, AgentDynamicsFlags newFlags)

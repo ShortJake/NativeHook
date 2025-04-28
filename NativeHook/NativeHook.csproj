@@ -12,6 +12,7 @@
 	<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
 	<AssemblyName>$(MSBuildProjectName)</AssemblyName>
 	<Configurations>Debug;Release;DebugEditor;ReleaseEditor</Configurations>
+	<AutoGenerateBindingRedirects>False</AutoGenerateBindingRedirects>
   </PropertyGroup>
 	<PropertyGroup Condition="'$(Configuration)'=='DebugEditor' OR '$(Configuration)'=='ReleaseEditor'">
 		<BuildForWindowsEditor>True</BuildForWindowsEditor>
@@ -23,10 +24,10 @@
 	</PropertyGroup>
 
 	<Target Name="PostBuildCopyToModules" AfterTargets="PostBuildEvent" Condition="$(ModuleId) != '' AND Exists($(GameFolder))">
-		<CallTarget Targets="CopyBinariesWindows"/>
-		<CallTarget Targets="CopyBinariesWindowsEditor"/>
-		<CallTarget Targets="CopyBinariesWindowsStore"/>
-		<CallTarget Targets="CopyModule"/>
+		<CallTarget Targets="CopyBinariesWindows" />
+		<CallTarget Targets="CopyBinariesWindowsEditor" />
+		<CallTarget Targets="CopyBinariesWindowsStore" />
+		<CallTarget Targets="CopyModule" />
 	</Target>
 
 	<Target Name="CopyBinariesWindowsEditor" AfterTargets="PostBuildEvent" Condition="$(BuildForWindowsEditor) == 'true' AND $(ModuleId) != '' AND Exists($(GameFolder))">
@@ -111,12 +112,12 @@
   </ItemGroup>
 	
   <ItemGroup>
-    <PackageReference Include="EasyHook" Version="2.7.7097" />
     <PackageReference Include="IsExternalInit" Version="1.0.3" PrivateAssets="all" IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
     <PackageReference Include="Bannerlord.BuildResources" Version="1.1.0.124" PrivateAssets="all" IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
-    <PackageReference Include="Lib.Harmony" Version="2.3.5" IncludeAssets="compile" />
+    <PackageReference Include="Lib.Harmony" Version="2.3.6" IncludeAssets="compile" />
     <PackageReference Include="Harmony.Extensions" Version="3.2.0.77" PrivateAssets="all" IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
     <PackageReference Include="BUTR.Harmony.Analyzer" Version="1.0.1.50" PrivateAssets="all" IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" PrivateAssets="all" IncludeAssets="compile" />
+    <PackageReference Include="Reloaded.Hooks" Version="3.5.6" />
   </ItemGroup>
 </Project>
