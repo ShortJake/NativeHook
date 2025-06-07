@@ -8,6 +8,7 @@ using TaleWorlds.Engine;
 using TaleWorlds.InputSystem;
 using TaleWorlds.Library;
 using TaleWorlds.MountAndBlade;
+using TaleWorlds.MountAndBlade.View;
 
 namespace NativeHook
 {
@@ -21,6 +22,8 @@ namespace NativeHook
         Vec3 _debugVec;
         MatrixFrame _debugFrame;
         ulong _debugAddr;
+        Skeleton _oldSkeleton;
+        Skeleton _newSkeleton;
         public DebugLogic()
         {
             NativeHookSubModule.OnPostAiTick += OnAiAgentTick;
@@ -38,27 +41,30 @@ namespace NativeHook
         public override void OnMissionTick(float dt)
         {
             if (Agent.Main == null) return;
-            /*var agent = Agent.Main.MountAgent ?? Agent.Main;
-            if (Input.IsKeyDown(InputKey.M))
+            if (_oldSkeleton == null) _oldSkeleton = Agent.Main.AgentVisuals.GetSkeleton();
+            if (Input.IsKeyPressed(InputKey.SemiColon))
             {
-                for (ulong i = 13; i < 15; i++)
+                var mat = Agent.Main.AgentVisuals.GetSkeleton().GetBoneLocalRestFrame(0);
+                //mat.Rotate(0.4f, Vec3.Up);
+                Agent.Main.AgentVisuals.GetSkeleton().SetBoneRestFrame(0, mat);
+                /*var animSysData = Agent.Main.Monster.FillAnimationSystemData(Agent.Main.ActionSet, 1f, false);
+                if (Agent.Main.AgentVisuals.GetSkeleton() == _oldSkeleton)
                 {
-                    var frame = GetPropertyUnsafe<MatrixFrame>(Agent.Main.AgentVisuals.GetSkeleton().Pointer, 0x18, 0x100 * i + 0xa0);
-                    frame.Advance(2f);
-                    SetPropertyUnsafe(Vec3.One * 5f, Agent.Main.AgentVisuals.GetSkeleton().Pointer, 0x18, 0x100 * i + 0x0);
+                    if (_newSkeleton == null)
+                    {   
+                        _newSkeleton = MBSkeletonExtensions.CreateWithActionSet(ref animSysData);
+                        Agent.Main.SetSkeleton(_newSkeleton, animSysData);
+                        var equipment = new Equipment(Agent.Main.SpawnEquipment);
+                        equipment[2].Clear();
+                        Agent.Main.UpdateSpawnEquipmentAndRefreshVisuals(equipment);
+                    }
+                    else Agent.Main.SetSkeleton(_newSkeleton, animSysData);
                 }
-                
+                else if (Agent.Main.AgentVisuals.GetSkeleton() == _newSkeleton)
+                {
+                    Agent.Main.SetSkeleton(_oldSkeleton, animSysData);
+                }*/
             }
-            else if (Input.IsKeyDown(InputKey.N))
-            {
-                for (ulong i = 13; i < 15; i++)
-                {
-                    var index = 15Ul;
-                    var frame = GetPropertyUnsafe<MatrixFrame>(Agent.Main.AgentVisuals.GetSkeleton().Pointer, 0x18, 0x100 * i + 0xa0);
-                    frame.Scale(Vec3.One * 0.9f);
-                    SetPropertyUnsafe(frame, Agent.Main.AgentVisuals.GetSkeleton().Pointer, 0x18, 0x100 * i + 0xa0);
-                }
-            }*/
         }
         public override void OnPreMissionTick(float dt)
         {
@@ -79,23 +85,6 @@ namespace NativeHook
         private void AfterUpdateDynamicsFlags(Agent agent, float dt, AgentDynamicsFlags oldFlags, AgentDynamicsFlags newFlags)
         {
             if (agent != Agent.Main) return;
-            Agent.Main.AgentVisuals.GetSkeleton()?.GetName();
-            if (Input.IsKeyDown(InputKey.CloseBraces))
-            {
-                var flags = Agent.Main.GetDynamicsFlags();
-                Agent.Main.SetDynamicsFlags(flags |= ~AgentDynamicsFlags.Walking2);
-            }
-            if (Agent.Main.MountAgent != null)
-            {
-                var flags = Agent.Main.MountAgent.GetDynamicsFlags();
-                    //InformationManager.DisplayMessage(new InformationMessage(flags.ToString()));
-            }
-            else
-            {
-                var flags = Agent.Main.GetDynamicsFlags();
-                //InformationManager.DisplayMessage(new InformationMessage(flags.ToString()));
-            }
-            
         }
 
         internal unsafe static void SetPropertyUnsafe<T>(T value, ulong baseAdr,  params ulong[] offsets) where T : unmanaged

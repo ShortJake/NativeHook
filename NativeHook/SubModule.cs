@@ -10,6 +10,10 @@ using TaleWorlds.DotNet;
 using TaleWorlds.Library;
 using TaleWorlds.InputSystem;
 using TaleWorlds.Core;
+using TaleWorlds.Engine;
+using System.Text.RegularExpressions;
+using System.Xml.Linq;
+using System.Net;
 
 namespace NativeHook
 {
@@ -37,7 +41,10 @@ namespace NativeHook
             }
             if (NativeDLLAddr == IntPtr.Zero)
             {
-                InformationManager.DisplayMessage(new InformationMessage("NativeHook Error! Could not find TaleWorlds.Native.dll", ErrorColor));
+                var errorMsg = "NativeHook Error! Could not find TaleWorlds.Native.dll";
+                InformationManager.DisplayMessage(new InformationMessage(errorMsg, ErrorColor));
+                MBDebug.ShowWarning(errorMsg);
+                MBDebug.Print(errorMsg);
                 return;
             }
             NativeHooks = new List<LocalHook>();
@@ -45,6 +52,7 @@ namespace NativeHook
             GetHookedMethodAddresses();
             CreateHooks();
         }
+
         protected override void OnSubModuleUnloaded()
         {
             base.OnSubModuleUnloaded();
@@ -66,11 +74,10 @@ namespace NativeHook
             CreateHook(Agent_AiTickAddr, new Agent_AiTickDelegate(Agent_AiTick));
             CreateHook(Agent_TickAddr, new Agent_TickDelegate(Agent_Tick));
             CreateHook(AgentMovementAndDynamicsSystem_UpdateFlagsAddr, new AgentMovementAndDynamicsSystem_UpdateFlagsDelegate(AgentMovementAndDynamicsSystem_UpdateFlags));
+            CreateHook(rglAnim_tree_TickAddr, new rglAnim_tree_TickDelegate(rglAnim_tree_Tick));
+            call_Agent_SetAnimSystem = Marshal.GetDelegateForFunctionPointer<Agent_SetAnimSystemDelegate>(Agent_SetAnimSystemAddr);
 #if DEBUG
-            unsafe
-            {
-                CreateHook(DebugMethod_Addr, new DebugMethodDelegate(OnDebugMethod));
-            }
+            //CreateHook(DebugMethod_Addr, new DebugMethodDelegate(OnDebugMethod));
 #endif
         }
         private void GetHookedMethodAddresses()
@@ -79,11 +86,15 @@ namespace NativeHook
 #if Editor
             Agent_AiTickAddr = ScanForFirstResult(buffer, "48 8b c4 f3 0f 11 48 10 55 41 54 41 55");
             Agent_TickAddr = ScanForFirstResult(buffer, "40 53 48 81 ec a0 00 00 00 80 b9 97");
+            Agent_SetAnimSystemAddr = ScanForFirstResult(buffer, "48 89 5c 24 08 48 89 74 24 10 57 48 83 ec 30 48 8b d9 33 f6 48 8b 89 98 05 00 00");
             AgentMovementAndDynamicsSystem_UpdateFlagsAddr = ScanForFirstResult(buffer, "40 55 56 48 8d 6c 24 b9 48 81 ec");
+            rglAnim_tree_TickAddr = ScanForFirstResult(buffer, "40 55 57 48 8d ac 24 28 ec ff ff b8 d8");
 #else
             Agent_AiTickAddr = ScanForFirstResult(buffer, "48 8b c4 f3 0f 11 48 10 55 41 54 41");
             Agent_TickAddr = ScanForFirstResult(buffer, "40 53 41 57 48 81 ec 88 00 00 00 8b");
+            Agent_SetAnimSystemAddr = ScanForFirstResult(buffer, "48 89 5c 24 08 48 89 74 24 10 57 48 83 ec 20 48 8b d9 33 f6 48 8b 89 90");
             AgentMovementAndDynamicsSystem_UpdateFlagsAddr = ScanForFirstResult(buffer, "40 55 57 48 8b ec 48 83 ec 48 48 89");
+            rglAnim_tree_TickAddr = ScanForFirstResult(buffer, "40 55 57 48 8d ac 24 28 ed ff ff");
 #endif
 #if DEBUG
             var hits = ScanFor(buffer, DebugMethodSignature);
@@ -171,8 +182,10 @@ namespace NativeHook
             functionName = functionName.Replace("Delegate", String.Empty);
             if (address == IntPtr.Zero)
             {
-                InformationManager.DisplayMessage(new InformationMessage("NativeHook Error! Invalid adddress for '" + functionName + "'. Not hooking!"
-                , ErrorColor));
+                var errorMsg = "NativeHook Error! Invalid adddress for '" + functionName + "'. Not hooking!";
+                InformationManager.DisplayMessage(new InformationMessage(errorMsg, ErrorColor));
+                MBDebug.ShowWarning(errorMsg);
+                MBDebug.Print(errorMsg);
                 return;
             }
             try
@@ -180,8 +193,10 @@ namespace NativeHook
                 var callDelField = AccessTools.Field(this.GetType(), "call_" + functionName);
                 if (callDelField == null)
                 {
-                    InformationManager.DisplayMessage(new InformationMessage("NativeHook Error! Function name doesnt match for " + functionName
-                , ErrorColor));
+                    var errorMsg = "NativeHook Error!Function name doesnt match for " + functionName;
+                    InformationManager.DisplayMessage(new InformationMessage(errorMsg, ErrorColor));
+                    MBDebug.ShowWarning(errorMsg);
+                    MBDebug.Print(errorMsg);
                     return;
                 }
                 callDelField.SetValue(this, Marshal.GetDelegateForFunctionPointer(address, functionDelegate.GetType()));
@@ -191,11 +206,14 @@ namespace NativeHook
             }
             catch (Exception ex)
             {
-                InformationManager.DisplayMessage(new InformationMessage("NativeHook Error! Error hooking '" + functionName + "'"
-                , ErrorColor));
+                var errorMsg = "NativeHook Error! Error hooking '" + functionName + "'";
+                InformationManager.DisplayMessage(new InformationMessage(errorMsg, ErrorColor));
+                MBDebug.ShowWarning(errorMsg);
+                MBDebug.Print(errorMsg);
                 throw ex;
             }
         }
+
 
         #region AI Tick
         public delegate void OnPostAiTickDelegate(Agent agent, float dt);
@@ -230,7 +248,7 @@ namespace NativeHook
         }
 #endif
 
-        #endregion
+#endregion
 
         #region Agent Tick
         public delegate void OnPostAgentTickDelegate(Agent agent, float dt);
@@ -266,6 +284,13 @@ namespace NativeHook
 #endif
         #endregion
 
+        #region Agent Set Animation System
+        private static IntPtr Agent_SetAnimSystemAddr;
+        [UnmanagedFunctionPointer(CallingConvention.ThisCall, SetLastError = true)]
+        public delegate void Agent_SetAnimSystemDelegate(UIntPtr agent, UIntPtr newAnimSystem);
+        public static Agent_SetAnimSystemDelegate call_Agent_SetAnimSystem;
+        #endregion
+
         #region Agent Movement And Dynamics Update Flags
         public delegate void AfterUpdateDynamicsFlagsDelegate(Agent agent, float dt, AgentDynamicsFlags oldFlags, AgentDynamicsFlags newFlags);
         public static event AfterUpdateDynamicsFlagsDelegate AfterUpdateDynamicsFlags;
@@ -288,31 +313,42 @@ namespace NativeHook
                 ev(agent, dt, oldFlags, newFlags);
             }
         }
-        #endregion
+#endregion
+
+#region Anim Tree Tick
+        public delegate void OnPostAnimTreeTickDelegate(Agent agent, Skeleton skeleton);
+        public static event OnPostAnimTreeTickDelegate OnPostAnimTreeTick;
+        private static IntPtr rglAnim_tree_TickAddr;
+        private static rglAnim_tree_TickDelegate call_rglAnim_tree_Tick;
+#if Editor
+        internal static int UnkownBoneMatrixFrameBuffer = 0x1725990;        
+        [UnmanagedFunctionPointer(CallingConvention.ThisCall, SetLastError = true)]
+        private delegate void rglAnim_tree_TickDelegate(UIntPtr animTree, UIntPtr skeleton, UIntPtr param, UIntPtr debug_param);
+        unsafe static private void rglAnim_tree_Tick(UIntPtr animTree, UIntPtr skeleton, UIntPtr param, UIntPtr debug_param)
+        {
+            call_rglAnim_tree_Tick(animTree, skeleton, param, debug_param);
+        }
+#else
+        internal static int UnkownBoneMatrixFrameBuffer = 0xc86890;
+        [UnmanagedFunctionPointer(CallingConvention.ThisCall, SetLastError = true)]
+        private delegate void rglAnim_tree_TickDelegate(UIntPtr animTree, UIntPtr skeleton);
+        unsafe static private void rglAnim_tree_Tick(UIntPtr animTree, UIntPtr skeleton)
+        {
+            call_rglAnim_tree_Tick(animTree, skeleton);
+        }
+#endif
+#endregion
+
 
 #if DEBUG
-        private static string DebugMethodSignature = "40 55 57 48 8d ac 24 28 ec ff ff b8 d8 14 00 00 e8 eb f0 82 00 48 2b e0 48 8b";
+        private static string DebugMethodSignature = "44 0f 10 46 04 0f 10 46 14 44 0f 11 85";
         private static DebugMethodDelegate call_DebugMethod;
         private static IntPtr DebugMethod_Addr = IntPtr.Zero;
-        [UnmanagedFunctionPointer(CallingConvention.ThisCall, SetLastError = true)]
-        private delegate void DebugMethodDelegate(UIntPtr animTree, UIntPtr skeleton, UIntPtr param, UIntPtr param2);
-        unsafe static private void OnDebugMethod(UIntPtr animTree, UIntPtr skeleton, UIntPtr param, UIntPtr param2)
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl, SetLastError = true)]
+        private delegate void DebugMethodDelegate();
+        unsafe static private void OnDebugMethod()
         {
-            call_DebugMethod(animTree, skeleton, param, param2);
-            if (Agent.Main != null && Agent.Main.AgentVisuals.GetSkeleton()?.Pointer == skeleton)
-            {
-                var index = 13;
-                var skelIndex = DebugLogic.GetPropertyUnsafe<int>(skeleton, 0x44);
-                var combinedIndex = (long)(index + skelIndex);
-                var dat = (NativeDLLAddr + 0x1725990).ToInt64();
-                long boneMat3Buffer = *(int*)(dat + 0xe78) * 0x128 + dat + 0xc28;
-                long chunkId = combinedIndex >> 13;
-                var m = (Mat3*)((boneMat3Buffer + 8L + chunkId * 8L) + (long)(combinedIndex + chunkId * -8192L) * 0x40);
-                if (Input.IsKeyDown(InputKey.M))
-                {
-                }
-                InformationManager.DisplayMessage(new InformationMessage(m->ToString()));
-            }
+            call_DebugMethod();
         }
 
         public struct BoneTransformation

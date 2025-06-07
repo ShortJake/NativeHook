@@ -6,8 +6,10 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using TaleWorlds.Engine;
 using TaleWorlds.Library;
 using TaleWorlds.MountAndBlade;
+using static NativeHook.NativeHookSubModule;
 
 namespace NativeHook
 {
@@ -15,9 +17,26 @@ namespace NativeHook
     {
         #region Extension Methods
         private static MethodBase GetPtr = AccessTools.Method(typeof(Agent), "GetPtr");
+        private static MethodBase InitializeAgentRecord = AccessTools.Method(typeof(Agent), "InitializeAgentRecord");
         internal static UIntPtr GetPointer(this Agent agent)
         {
             return (UIntPtr)GetPtr.Invoke(agent, new object[] { });
+        }
+
+        public unsafe static void SetSkeleton(this Agent agent, Skeleton newSkeleton, AnimationSystemData animData)
+        {
+            if (agent == null || newSkeleton == null) throw new ArgumentNullException();
+            
+            UIntPtr agentPointer = agent.GetPointer();
+            agent.AgentVisuals.SetSkeleton(newSkeleton);
+            // Set the agent's cached skeleton to the new one
+            *(ulong*)(agentPointer + cached_skeleton).ToPointer() = newSkeleton.Pointer.ToUInt64();
+            var newSkeleton_animTree = (ulong*)(newSkeleton.Pointer + rglSkeleton.anim_tree).ToPointer();
+            
+            call_Agent_SetAnimSystem(agentPointer, new UIntPtr(*newSkeleton_animTree));
+
+            agent.SetActionSet(ref animData);
+            InitializeAgentRecord.Invoke(agent, new object[] { });
         }
         #endregion
 

@@ -23,10 +23,10 @@
 	</PropertyGroup>
 
 	<Target Name="PostBuildCopyToModules" AfterTargets="PostBuildEvent" Condition="$(ModuleId) != '' AND Exists($(GameFolder))">
-		<CallTarget Targets="CopyBinariesWindows"/>
-		<CallTarget Targets="CopyBinariesWindowsEditor"/>
-		<CallTarget Targets="CopyBinariesWindowsStore"/>
-		<CallTarget Targets="CopyModule"/>
+		<CallTarget Targets="CopyBinariesWindows" />
+		<CallTarget Targets="CopyBinariesWindowsEditor" />
+		<CallTarget Targets="CopyBinariesWindowsStore" />
+		<CallTarget Targets="CopyModule" />
 	</Target>
 
 	<Target Name="CopyBinariesWindowsEditor" AfterTargets="PostBuildEvent" Condition="$(BuildForWindowsEditor) == 'true' AND $(ModuleId) != '' AND Exists($(GameFolder))">
