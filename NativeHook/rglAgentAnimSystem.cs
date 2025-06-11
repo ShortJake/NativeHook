@@ -1,6 +1,6 @@
 ﻿namespace NativeHook
 {
-    public static class rglAgent_anim_system
+    public static class rglAgentAnimSystem
     {
         #region Extension Methods
         #endregion

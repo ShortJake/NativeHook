@@ -4,6 +4,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 17.3.32811.315
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NativeHook", "NativeHook.csproj", "{66660DBE-142C-45D5-9FDC-DDCAAB36A502}"
+	ProjectSection(ProjectDependencies) = postProject
+		{FF5B5AE6-527A-4496-B3E0-2E975D2287F6} = {FF5B5AE6-527A-4496-B3E0-2E975D2287F6}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NativeHookUnmanaged", "..\NativeHookUnmanaged\NativeHookUnmanaged.vcxproj", "{FF5B5AE6-527A-4496-B3E0-2E975D2287F6}"
 EndProject
@@ -53,8 +56,8 @@ Global
 		{FF5B5AE6-527A-4496-B3E0-2E975D2287F6}.Debug|x64.Build.0 = Debug|x64
 		{FF5B5AE6-527A-4496-B3E0-2E975D2287F6}.Debug|x86.ActiveCfg = Debug|Win32
 		{FF5B5AE6-527A-4496-B3E0-2E975D2287F6}.Debug|x86.Build.0 = Debug|Win32
-		{FF5B5AE6-527A-4496-B3E0-2E975D2287F6}.DebugEditor|Any CPU.ActiveCfg = Debug|x64
-		{FF5B5AE6-527A-4496-B3E0-2E975D2287F6}.DebugEditor|Any CPU.Build.0 = Debug|x64
+		{FF5B5AE6-527A-4496-B3E0-2E975D2287F6}.DebugEditor|Any CPU.ActiveCfg = DebugEditor|x64
+		{FF5B5AE6-527A-4496-B3E0-2E975D2287F6}.DebugEditor|Any CPU.Build.0 = DebugEditor|x64
 		{FF5B5AE6-527A-4496-B3E0-2E975D2287F6}.DebugEditor|x64.ActiveCfg = Debug|x64
 		{FF5B5AE6-527A-4496-B3E0-2E975D2287F6}.DebugEditor|x64.Build.0 = Debug|x64
 		{FF5B5AE6-527A-4496-B3E0-2E975D2287F6}.DebugEditor|x86.ActiveCfg = Debug|Win32
@@ -65,8 +68,8 @@ Global
 		{FF5B5AE6-527A-4496-B3E0-2E975D2287F6}.Release|x64.Build.0 = Release|x64
 		{FF5B5AE6-527A-4496-B3E0-2E975D2287F6}.Release|x86.ActiveCfg = Release|Win32
 		{FF5B5AE6-527A-4496-B3E0-2E975D2287F6}.Release|x86.Build.0 = Release|Win32
-		{FF5B5AE6-527A-4496-B3E0-2E975D2287F6}.ReleaseEditor|Any CPU.ActiveCfg = Release|x64
-		{FF5B5AE6-527A-4496-B3E0-2E975D2287F6}.ReleaseEditor|Any CPU.Build.0 = Release|x64
+		{FF5B5AE6-527A-4496-B3E0-2E975D2287F6}.ReleaseEditor|Any CPU.ActiveCfg = ReleaseEditor|x64
+		{FF5B5AE6-527A-4496-B3E0-2E975D2287F6}.ReleaseEditor|Any CPU.Build.0 = ReleaseEditor|x64
 		{FF5B5AE6-527A-4496-B3E0-2E975D2287F6}.ReleaseEditor|x64.ActiveCfg = Release|x64
 		{FF5B5AE6-527A-4496-B3E0-2E975D2287F6}.ReleaseEditor|x64.Build.0 = Release|x64
 		{FF5B5AE6-527A-4496-B3E0-2E975D2287F6}.ReleaseEditor|x86.ActiveCfg = Release|Win32

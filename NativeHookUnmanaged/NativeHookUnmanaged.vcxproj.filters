@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Header Files\RGL">
+      <UniqueIdentifier>{98be652a-7249-44af-8343-68774931465f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -21,12 +24,36 @@
     <ClInclude Include="pch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="SignatureScanner.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="rglAgentMovementAndDynamicsSystem.h">
+      <Filter>Header Files\RGL</Filter>
+    </ClInclude>
+    <ClInclude Include="rglAgent.h">
+      <Filter>Header Files\RGL</Filter>
+    </ClInclude>
+    <ClInclude Include="rglBoneStruct.h">
+      <Filter>Header Files\RGL</Filter>
+    </ClInclude>
+    <ClInclude Include="rglSkeleton.h">
+      <Filter>Header Files\RGL</Filter>
+    </ClInclude>
+    <ClInclude Include="rglAgentAnimSystem.h">
+      <Filter>Header Files\RGL</Filter>
+    </ClInclude>
+    <ClInclude Include="rglAgentRecord.h">
+      <Filter>Header Files\RGL</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="pch.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SignatureScanner.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

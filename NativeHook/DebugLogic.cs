@@ -27,15 +27,15 @@ namespace NativeHook
         public DebugLogic()
         {
             NativeHookSubModule.OnPostAiTick += OnAiAgentTick;
-            /*NativeHookSubModule.OnPostAgentTick += OnPostAgentTick;
-            NativeHookSubModule.AfterUpdateDynamicsFlags += AfterUpdateDynamicsFlags;*/
+            NativeHookSubModule.OnPostAgentTick += OnPostAgentTick;
+            NativeHookSubModule.AfterUpdateDynamicsFlags += AfterUpdateDynamicsFlags;
         }
         public override void OnRemoveBehavior()
         {
             base.OnRemoveBehavior();
             NativeHookSubModule.OnPostAiTick -= OnAiAgentTick;
-            /*NativeHookSubModule.OnPostAgentTick -= OnPostAgentTick;
-            NativeHookSubModule.AfterUpdateDynamicsFlags -= AfterUpdateDynamicsFlags;*/
+            NativeHookSubModule.OnPostAgentTick -= OnPostAgentTick;
+            NativeHookSubModule.AfterUpdateDynamicsFlags -= AfterUpdateDynamicsFlags;
         }
         public override void OnMissionTick(float dt)
         {
@@ -74,17 +74,17 @@ namespace NativeHook
         private void OnAiAgentTick(Agent agent, float dt)
         {
             if (!agent.IsHuman) return;
-            if (Input.IsKeyDown(InputKey.M)) agent.SetMovementVelocity(Vec2.Forward * -4);
         }
 
         private void OnPostAgentTick(Agent agent, float dt)
         {
-            if (agent != Agent.Main || !agent.IsActive()) return;    
+            if (agent != Agent.Main || !agent.IsActive() || agent.MountAgent == null) return;
+            if (Input.IsKeyDown(InputKey.M)) agent.MountAgent.SetMovementVelocity(agent.MountAgent.MovementVelocity * 2);
         }
 
         private void AfterUpdateDynamicsFlags(Agent agent, float dt, AgentDynamicsFlags oldFlags, AgentDynamicsFlags newFlags)
         {
-            if (agent != Agent.Main) return;
+            if (agent != Agent.Main || agent.MountAgent == null) return;
         }
 
         internal unsafe static void SetPropertyUnsafe<T>(T value, ulong baseAdr,  params ulong[] offsets) where T : unmanaged
