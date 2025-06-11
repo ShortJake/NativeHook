@@ -33,7 +33,7 @@ namespace NativeHook
             *(ulong*)(agentPointer + cached_skeleton).ToPointer() = newSkeleton.Pointer.ToUInt64();
             var newSkeleton_animTree = (ulong*)(newSkeleton.Pointer + rglSkeleton.anim_tree).ToPointer();
             
-            call_Agent_SetAnimSystem(agentPointer, new UIntPtr(*newSkeleton_animTree));
+            //call_Agent_SetAnimSystem(agentPointer, new UIntPtr(*newSkeleton_animTree));
 
             agent.SetActionSet(ref animData);
             InitializeAgentRecord.Invoke(agent, new object[] { });

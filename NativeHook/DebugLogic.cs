@@ -27,17 +27,16 @@ namespace NativeHook
         public DebugLogic()
         {
             NativeHookSubModule.OnPostAiTick += OnAiAgentTick;
-            NativeHookSubModule.OnPostAgentTick += OnPostAgentTick;
-            NativeHookSubModule.AfterUpdateDynamicsFlags += AfterUpdateDynamicsFlags;
+            /*NativeHookSubModule.OnPostAgentTick += OnPostAgentTick;
+            NativeHookSubModule.AfterUpdateDynamicsFlags += AfterUpdateDynamicsFlags;*/
         }
         public override void OnRemoveBehavior()
         {
             base.OnRemoveBehavior();
             NativeHookSubModule.OnPostAiTick -= OnAiAgentTick;
-            NativeHookSubModule.OnPostAgentTick -= OnPostAgentTick;
-            NativeHookSubModule.AfterUpdateDynamicsFlags -= AfterUpdateDynamicsFlags;
+            /*NativeHookSubModule.OnPostAgentTick -= OnPostAgentTick;
+            NativeHookSubModule.AfterUpdateDynamicsFlags -= AfterUpdateDynamicsFlags;*/
         }
-
         public override void OnMissionTick(float dt)
         {
             if (Agent.Main == null) return;
@@ -75,6 +74,7 @@ namespace NativeHook
         private void OnAiAgentTick(Agent agent, float dt)
         {
             if (!agent.IsHuman) return;
+            if (Input.IsKeyDown(InputKey.M)) agent.SetMovementVelocity(Vec2.Forward * -4);
         }
 
         private void OnPostAgentTick(Agent agent, float dt)

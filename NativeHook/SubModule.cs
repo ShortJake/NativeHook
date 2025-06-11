@@ -1,7 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 using System;
 using TaleWorlds.MountAndBlade;
-using EasyHook;
 using System.Reflection;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -22,10 +21,17 @@ namespace NativeHook
         private Color ErrorColor;
         public static IntPtr NativeDLLAddr;
         private static int NativeDLLSize;
-        //Hooks will be disposed of if kept as local variables
-        private static List<LocalHook> NativeHooks;
+        //Prevent GC'ing of delegates
+        private static List<Delegate> CallbackDelegates;
         // Returns the managed object that corresponds to this ID. ID is at an offset of 0x18 for agents
         private static MethodBase GetManagedObjWithId;
+
+        [DllImport("NativeHookUnmanaged.dll")]
+        private static extern void NH_Initialize(IntPtr nativeDllAddress, IntPtr nativeDllSize);
+        [DllImport("NativeHookUnmanaged.dll")]
+        private static extern void NH_FillCallbacks(IntPtr postAiTick);
+        [DllImport("NativeHookUnmanaged.dll")]
+        private static extern void NH_Cleanup();
 
         protected override void OnSubModuleLoad()
         {
@@ -47,20 +53,18 @@ namespace NativeHook
                 MBDebug.Print(errorMsg);
                 return;
             }
-            NativeHooks = new List<LocalHook>();
+            CallbackDelegates = new List<Delegate>();
             GetManagedObjWithId = AccessTools.Method(typeof(DotNetObject), "GetManagedObjectWithId", new Type[] { typeof(int) });
-            GetHookedMethodAddresses();
-            CreateHooks();
+            NH_Initialize(NativeDLLAddr, new IntPtr(NativeDLLSize));
+            var onPostAiTick = new Callback_OnPostAiTickDelegate(Callback_OnPostAiTick);
+            CallbackDelegates.Add(onPostAiTick);
+            NH_FillCallbacks(Marshal.GetFunctionPointerForDelegate(onPostAiTick));
         }
 
         protected override void OnSubModuleUnloaded()
         {
             base.OnSubModuleUnloaded();
-            foreach (var hook in NativeHooks)
-            {
-                hook.Dispose();
-            }
-            NativeHooks.Clear();
+            NH_Cleanup();
         }
         public override void OnMissionBehaviorInitialize(Mission mission)
         {
@@ -69,188 +73,39 @@ namespace NativeHook
             mission.AddMissionBehavior(new DebugLogic());
 #endif
         }
-        private void CreateHooks()
-        {
-            CreateHook(Agent_AiTickAddr, new Agent_AiTickDelegate(Agent_AiTick));
-            CreateHook(Agent_TickAddr, new Agent_TickDelegate(Agent_Tick));
-            CreateHook(AgentMovementAndDynamicsSystem_UpdateFlagsAddr, new AgentMovementAndDynamicsSystem_UpdateFlagsDelegate(AgentMovementAndDynamicsSystem_UpdateFlags));
-            CreateHook(rglAnim_tree_TickAddr, new rglAnim_tree_TickDelegate(rglAnim_tree_Tick));
-            call_Agent_SetAnimSystem = Marshal.GetDelegateForFunctionPointer<Agent_SetAnimSystemDelegate>(Agent_SetAnimSystemAddr);
-#if DEBUG
-            //CreateHook(DebugMethod_Addr, new DebugMethodDelegate(OnDebugMethod));
-#endif
-        }
-        private void GetHookedMethodAddresses()
-        {
-            var buffer = GetMemoryBuffer(NativeDLLAddr, NativeDLLSize);
-#if Editor
+
+        /*
             Agent_AiTickAddr = ScanForFirstResult(buffer, "48 8b c4 f3 0f 11 48 10 55 41 54 41 55");
             Agent_TickAddr = ScanForFirstResult(buffer, "40 53 48 81 ec a0 00 00 00 80 b9 97");
             Agent_SetAnimSystemAddr = ScanForFirstResult(buffer, "48 89 5c 24 08 48 89 74 24 10 57 48 83 ec 30 48 8b d9 33 f6 48 8b 89 98 05 00 00");
             AgentMovementAndDynamicsSystem_UpdateFlagsAddr = ScanForFirstResult(buffer, "40 55 56 48 8d 6c 24 b9 48 81 ec");
             rglAnim_tree_TickAddr = ScanForFirstResult(buffer, "40 55 57 48 8d ac 24 28 ec ff ff b8 d8");
-#else
+        NON-EDITOR:
             Agent_AiTickAddr = ScanForFirstResult(buffer, "48 8b c4 f3 0f 11 48 10 55 41 54 41");
             Agent_TickAddr = ScanForFirstResult(buffer, "40 53 41 57 48 81 ec 88 00 00 00 8b");
             Agent_SetAnimSystemAddr = ScanForFirstResult(buffer, "48 89 5c 24 08 48 89 74 24 10 57 48 83 ec 20 48 8b d9 33 f6 48 8b 89 90");
             AgentMovementAndDynamicsSystem_UpdateFlagsAddr = ScanForFirstResult(buffer, "40 55 57 48 8b ec 48 83 ec 48 48 89");
             rglAnim_tree_TickAddr = ScanForFirstResult(buffer, "40 55 57 48 8d ac 24 28 ed ff ff");
-#endif
-#if DEBUG
-            var hits = ScanFor(buffer, DebugMethodSignature);
-            if (hits.Count > 0) DebugMethod_Addr = hits[0];
-#endif
-        }
-        /// <summary>
-        /// Reads memory as a byte array
-        /// </summary>
-        /// <param name="startAddress">Address to start reading from</param>
-        /// <param name="size">How many bytes to read</param>
-        /// <returns></returns>
-        private unsafe byte[] GetMemoryBuffer(IntPtr startAddress, int size)
-        {
-            // This isn't a good implementation, but I'm using it temporarily for now until I can implement a proper method
-            if (startAddress == IntPtr.Zero || size == 0) return new byte[1];
-            byte[] buffer = new byte[size];
-            for (int i = 0; i < buffer.LongLength; i++)
-            {
-                var b = *(byte*)(startAddress + i).ToPointer();
-                buffer[i] = b;
-            }
-            return buffer;
-        }
-        private int[] ParseSignatureString(string signature)
-        {
-            var splitSig = signature.Split(' ');
-            var bytes = new int[splitSig.Length];
-            for (int i = 0; i < splitSig.Length; i++)
-            {
-                // -1 represents wild card. Set any string that cannot be parsed to -1
-                if (int.TryParse(splitSig[i], System.Globalization.NumberStyles.HexNumber, null, out var result)) bytes[i] = result;
-                else bytes[i] = -1;
-            }
-            return bytes;
-        }
-        /// <summary>
-        /// Scans the memory buffer for the signature
-        /// </summary>
-        /// <param name="signature">Signature as a string of hexadecimals separated by spaces. Use ?? for wildcard</param>
-        /// <returns>First match for the signature</returns>
-        private IntPtr ScanForFirstResult(byte[] buffer, string signatureString)
-        {
-            int[] signature = ParseSignatureString(signatureString);
-            for (int i = 0; i < buffer.Length; i++)
-            {
-
-                for (int j = 0; j < signature.Length; j++)
-                {
-                    if (signature[j] != -1 && signature[j] != buffer[i + j]) break;
-                    if (j + 1 == signature.Length)
-                    {
-                        return NativeDLLAddr + i;
-                    }
-                }
-            }
-            return IntPtr.Zero;
-        }
-        /// <summary>
-        /// Scans the memory buffer for the signature
-        /// </summary>
-        /// <param name="signature">Signature as a string of hexadecimals separated by spaces. Use ?? for wildcard</param>
-        /// <returns>List of all matches for the signature</returns>
-        private List<IntPtr> ScanFor(byte[] buffer, string signatureString)
-        {
-            int[] signature = ParseSignatureString(signatureString);
-            var hits = new List<IntPtr>();
-            for (int i = 0; i < buffer.Length; i++)
-            {
-
-                for (int j = 0; j < signature.Length; j++)
-                {
-                    if (signature[j] != -1 && signature[j] != buffer[i + j]) break;
-                    if (j + 1 == signature.Length)
-                    {
-                        hits.Add(NativeDLLAddr + i);
-                    }
-                }
-            }
-            return hits;
-        }
-        private void CreateHook(IntPtr address, Delegate functionDelegate)
-        {
-            var functionName = functionDelegate.GetType().Name;
-            functionName = functionName.Replace("Delegate", String.Empty);
-            if (address == IntPtr.Zero)
-            {
-                var errorMsg = "NativeHook Error! Invalid adddress for '" + functionName + "'. Not hooking!";
-                InformationManager.DisplayMessage(new InformationMessage(errorMsg, ErrorColor));
-                MBDebug.ShowWarning(errorMsg);
-                MBDebug.Print(errorMsg);
-                return;
-            }
-            try
-            {
-                var callDelField = AccessTools.Field(this.GetType(), "call_" + functionName);
-                if (callDelField == null)
-                {
-                    var errorMsg = "NativeHook Error!Function name doesnt match for " + functionName;
-                    InformationManager.DisplayMessage(new InformationMessage(errorMsg, ErrorColor));
-                    MBDebug.ShowWarning(errorMsg);
-                    MBDebug.Print(errorMsg);
-                    return;
-                }
-                callDelField.SetValue(this, Marshal.GetDelegateForFunctionPointer(address, functionDelegate.GetType()));
-                var hook = LocalHook.Create(address, functionDelegate, null);
-                hook.ThreadACL.SetExclusiveACL(new int[] { });
-                NativeHooks.Add(hook);
-            }
-            catch (Exception ex)
-            {
-                var errorMsg = "NativeHook Error! Error hooking '" + functionName + "'";
-                InformationManager.DisplayMessage(new InformationMessage(errorMsg, ErrorColor));
-                MBDebug.ShowWarning(errorMsg);
-                MBDebug.Print(errorMsg);
-                throw ex;
-            }
-        }
+        */
 
 
         #region AI Tick
         public delegate void OnPostAiTickDelegate(Agent agent, float dt);
         public static event OnPostAiTickDelegate OnPostAiTick;
-        private static IntPtr Agent_AiTickAddr;
-        private static Agent_AiTickDelegate call_Agent_AiTick;
-#if Editor
-        [UnmanagedFunctionPointer(CallingConvention.ThisCall, SetLastError = true)]
-        private delegate void Agent_AiTickDelegate(UIntPtr agentPtr, float dt, UIntPtr param1, UIntPtr param2);
-        unsafe static private void Agent_AiTick(UIntPtr agentPtr, float dt, UIntPtr param1, UIntPtr param2)
+
+        private delegate void Callback_OnPostAiTickDelegate(int agentObjIndex, float dt);
+        static private void Callback_OnPostAiTick(int agentObjIndex, float dt)
         {
-            call_Agent_AiTick(agentPtr, dt, param1, param2);
-            var agentObjIndex = *(int*)(agentPtr + rglAgent.obj_id).ToPointer();
             var agentObj = GetManagedObjWithId.Invoke(null, new object[] { agentObjIndex }) as Agent;
             // Copying event to a local variable prevents a race condition when another thread unsubscribes from event
             var ev = OnPostAiTick;
             if (Mission.Current == null || agentObj == null || ev == null) return;
             ev(agentObj, dt);
         }
-#else
-        [UnmanagedFunctionPointer(CallingConvention.ThisCall, SetLastError = true)]
-        private delegate void Agent_AiTickDelegate(UIntPtr agentPtr, float dt);
-        unsafe static private void Agent_AiTick(UIntPtr agentPtr, float dt)
-        {
-            call_Agent_AiTick(agentPtr, dt);
-            var agentObjIndex = *(int*)(agentPtr + rglAgent.obj_id).ToPointer();
-            var agentObj = GetManagedObjWithId.Invoke(null, new object[] { agentObjIndex }) as Agent;
-            // Copying event to a local variable prevents a race condition when another thread unsubscribes from event
-            var ev = OnPostAiTick;
-            if (Mission.Current == null || agentObj == null || ev == null) return;
-            ev(agentObj, dt);
-        }
-#endif
 
 #endregion
 
-        #region Agent Tick
+        /*#region Agent Tick
         public delegate void OnPostAgentTickDelegate(Agent agent, float dt);
         public static event OnPostAgentTickDelegate OnPostAgentTick;
         private static IntPtr Agent_TickAddr;
@@ -362,6 +217,6 @@ namespace NativeHook
             }
         }
 #endif
-
+        */
     }
 }

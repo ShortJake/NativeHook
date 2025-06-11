@@ -35,23 +35,24 @@ namespace NativeHook
 
         internal unsafe static MatrixFrame GetBoneCachedTransformationFrame(UIntPtr skeletonPointer, byte boneIndex)
         {
-            var skeletonCacheIndex = *(int*)(skeletonPointer + cache_index).ToPointer();
+            return MatrixFrame.Identity;
+            /*var skeletonCacheIndex = *(int*)(skeletonPointer + cache_index).ToPointer();
             var combinedIndex = (long)(boneIndex + skeletonCacheIndex);
             var dat = *(long*)(NativeHookSubModule.NativeDLLAddr + NativeHookSubModule.UnkownBoneMatrixFrameBuffer).ToPointer();
             long boneMatrixFrameBuffer = *(int*)(dat + 0xe78) * 0x128 + dat + 0xc28;
             long chunkId = combinedIndex >> 13;
             var m = (MatrixFrame*)(*(long*)(boneMatrixFrameBuffer + sizeof(IntPtr) + chunkId * sizeof(IntPtr)) + (combinedIndex + chunkId * -8192L) * sizeof(MatrixFrame));
-            return *m;
+            return *m;*/
         }
         internal unsafe static void SetBoneCachedTransformationFrame(UIntPtr skeletonPointer, byte boneIndex, MatrixFrame newFrame)
         {
-            var skeletonCacheIndex = *(int*)(skeletonPointer + cache_index).ToPointer();
+            /*var skeletonCacheIndex = *(int*)(skeletonPointer + cache_index).ToPointer();
             var combinedIndex = (long)(boneIndex + skeletonCacheIndex);
             var dat = *(long*)(NativeHookSubModule.NativeDLLAddr + NativeHookSubModule.UnkownBoneMatrixFrameBuffer).ToPointer();
             long boneMatrixFrameBuffer = *(int*)(dat + 0xe78) * 0x128 + dat + 0xc28;
             long chunkId = combinedIndex >> 13;
             var m = (MatrixFrame*)(*(long*)(boneMatrixFrameBuffer + sizeof(IntPtr) + chunkId * sizeof(IntPtr)) + (combinedIndex + chunkId * -8192L) * sizeof(MatrixFrame));
-            *m = newFrame;
+            *m = newFrame;*/
         }
         #endregion
 
