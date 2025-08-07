@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Reflection;
+using System.Security.Policy;
 using TaleWorlds.Core;
 using TaleWorlds.Engine;
 using TaleWorlds.InputSystem;
@@ -29,40 +30,60 @@ namespace NativeHook
             NativeHookSubModule.OnPostAiTick += OnAiAgentTick;
             NativeHookSubModule.OnPostAgentTick += OnPostAgentTick;
             NativeHookSubModule.AfterUpdateDynamicsFlags += AfterUpdateDynamicsFlags;
+            NativeHookSubModule.OnAnimTreeTick += OnAnimTreeTick;
         }
+
         public override void OnRemoveBehavior()
         {
             base.OnRemoveBehavior();
             NativeHookSubModule.OnPostAiTick -= OnAiAgentTick;
             NativeHookSubModule.OnPostAgentTick -= OnPostAgentTick;
             NativeHookSubModule.AfterUpdateDynamicsFlags -= AfterUpdateDynamicsFlags;
+            NativeHookSubModule.OnAnimTreeTick -= OnAnimTreeTick;
         }
         public override void OnMissionTick(float dt)
         {
             if (Agent.Main == null) return;
             if (_oldSkeleton == null) _oldSkeleton = Agent.Main.AgentVisuals.GetSkeleton();
-            if (Input.IsKeyPressed(InputKey.SemiColon))
+            if (Input.IsKeyPressed(InputKey.M))
             {
-                var mat = Agent.Main.AgentVisuals.GetSkeleton().GetBoneLocalRestFrame(0);
-                //mat.Rotate(0.4f, Vec3.Up);
-                Agent.Main.AgentVisuals.GetSkeleton().SetBoneRestFrame(0, mat);
-                /*var animSysData = Agent.Main.Monster.FillAnimationSystemData(Agent.Main.ActionSet, 1f, false);
-                if (Agent.Main.AgentVisuals.GetSkeleton() == _oldSkeleton)
+                /*for (byte j = 0; j < _oldSkeleton.GetBoneCount(); j++)
                 {
-                    if (_newSkeleton == null)
-                    {   
-                        _newSkeleton = MBSkeletonExtensions.CreateWithActionSet(ref animSysData);
-                        Agent.Main.SetSkeleton(_newSkeleton, animSysData);
-                        var equipment = new Equipment(Agent.Main.SpawnEquipment);
-                        equipment[2].Clear();
-                        Agent.Main.UpdateSpawnEquipmentAndRefreshVisuals(equipment);
-                    }
-                    else Agent.Main.SetSkeleton(_newSkeleton, animSysData);
-                }
-                else if (Agent.Main.AgentVisuals.GetSkeleton() == _newSkeleton)
-                {
-                    Agent.Main.SetSkeleton(_oldSkeleton, animSysData);
+                    MBDebug.RenderDebugFrame(Agent.Main.AgentVisuals.GetGlobalFrame().TransformToParent(_oldSkeleton.GetBoneRestFrame(j)), 0.2f, 10f);
                 }*/
+                var localFrame = _oldSkeleton.GetBoneLocalRestFrame(13);
+                localFrame.Advance(0.5f);
+                SetPropertyUnsafe(localFrame, _oldSkeleton.Pointer, rglSkeleton.skeleton_model, 0x140, 13 * 0x1b0 + 0x50UL);
+            }
+            if (Input.IsKeyPressed(InputKey.Comma))
+            {
+                for (sbyte j = 0; j < _oldSkeleton.GetBoneCount(); j++)
+                {
+                    MBDebug.RenderDebugFrame(Agent.Main.AgentVisuals.GetGlobalFrame().TransformToParent(_oldSkeleton.GetBoneEntitialRestFrame(j)), 0.2f, 10f);
+                }
+            }
+            if (Input.IsKeyPressed(InputKey.K))
+            {
+                var currentSkeleton = Agent.Main.AgentVisuals.GetSkeleton();
+                if (currentSkeleton == _oldSkeleton && _newSkeleton == null)
+                {
+                    var animData = Agent.Main.Monster.FillAnimationSystemData(Agent.Main.ActionSet, 1f, false);
+                    var skin = new SkinGenerationParams((int)SkinMask.AllVisible, Equipment.UnderwearTypes.NoUnderwear, 0, 0, 0, 0, true, 0f, Agent.Main.IsFemale ? 1 : 0, 0, false, false);
+                    _newSkeleton = MBSkeletonExtensions.CreateWithActionSet(ref animData);
+                    Agent.Main.SetSkeleton(_newSkeleton, animData);
+                    Agent.Main.AgentVisuals.ClearVisualComponents(false);
+                    Agent.Main.AgentVisuals.AddSkinMeshes(skin, Agent.Main.BodyPropertiesValue, true, false);
+                }
+                else if (currentSkeleton == _oldSkeleton)
+                {
+                    var animData = Agent.Main.Monster.FillAnimationSystemData(Agent.Main.ActionSet, 1f, false);
+                    Agent.Main.SetSkeleton(_newSkeleton, animData);
+                }
+                else if (currentSkeleton == _newSkeleton)
+                {
+                    var animData = Agent.Main.Monster.FillAnimationSystemData(Agent.Main.ActionSet, 1f, false);
+                    Agent.Main.SetSkeleton(_oldSkeleton, animData);
+                }
             }
         }
         public override void OnPreMissionTick(float dt)
@@ -78,13 +99,16 @@ namespace NativeHook
 
         private void OnPostAgentTick(Agent agent, float dt)
         {
-            if (agent != Agent.Main || !agent.IsActive() || agent.MountAgent == null) return;
-            if (Input.IsKeyDown(InputKey.M)) agent.MountAgent.SetMovementVelocity(agent.MountAgent.MovementVelocity * 2);
+            if (!agent.IsActive()) return;
         }
 
         private void AfterUpdateDynamicsFlags(Agent agent, float dt, AgentDynamicsFlags oldFlags, AgentDynamicsFlags newFlags)
         {
             if (agent != Agent.Main || agent.MountAgent == null) return;
+        }
+        private void OnAnimTreeTick(Skeleton skeleton, byte firstBoneIndex, ref MatrixFrame[] cachedMatrixFrames)
+        {
+            
         }
 
         internal unsafe static void SetPropertyUnsafe<T>(T value, ulong baseAdr,  params ulong[] offsets) where T : unmanaged
@@ -114,6 +138,16 @@ namespace NativeHook
         internal unsafe static T GetPropertyUnsafe<T>(UIntPtr baseAdr, params ulong[] offsets) where T : unmanaged
         {
             return GetPropertyUnsafe<T>(baseAdr.ToUInt64(), offsets);
+        }
+
+        internal unsafe static ulong FindInMemory<T>(ulong baseAdr, ulong range, T value) where T : unmanaged
+        {
+            for (ulong i = 0; i < range; i++)
+            {
+                var currentValue = *(T*)(baseAdr + i);
+                if (currentValue.Equals(value)) return baseAdr + i;
+            }
+            return 0x0;
         }
     }
 #endif

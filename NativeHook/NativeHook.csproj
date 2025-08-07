@@ -22,26 +22,26 @@
 		<BuildForWindows>True</BuildForWindows>
 	</PropertyGroup>
 
-	<Target Name="PostBuildCopyToModules" AfterTargets="PostBuildEvent" Condition="$(ModuleId) != '' AND Exists($(GameFolder))">
-		<CallTarget Targets="CopyBinariesWindows" />
+	<Target Name="PostBuildCopyAdditionalBinaries" AfterTargets="PostBuildCopyToModules" Condition="$(ModuleId) != '' AND Exists($(GameFolder))">
+		<!--CallTarget Targets="CopyBinariesWindows" /-->
 		<CallTarget Targets="CopyBinariesWindowsEditor" />
 		<CallTarget Targets="CopyNativeBinariesWindows" />
 		<CallTarget Targets="CopyNativeBinariesWindowsEditor" />
 		<CallTarget Targets="CopyBinariesWindowsStore" />
-		<CallTarget Targets="CopyModule" />
+		<!--CallTarget Targets="CopyModule" /-->
 	</Target>
 
-	<Target Name="CopyBinariesWindowsEditor" AfterTargets="PostBuildEvent" Condition="$(BuildForWindowsEditor) == 'true' AND $(ModuleId) != '' AND Exists($(GameFolder))">
+	<Target Name="CopyBinariesWindowsEditor" Condition="$(BuildForWindowsEditor) == 'true' AND $(ModuleId) != '' AND Exists($(GameFolder))">
 		<CreateDirectory Directory="$(GameFolder)/Modules/$(ModuleId)/bin/Win64_Shipping_wEditor" />
 		<CopyFolder FromDirectory="$(TargetDir)" ToDirectory="$(GameFolder)/Modules/$(ModuleId)/bin/Win64_Shipping_wEditor" Regex="$(PostBuildCopyToModulesRegex)" Clean="true" />
 	</Target>
 
-	<Target Name="CopyNativeBinariesWindows" AfterTargets="PostBuildEvent" Condition="$(BuildForWindowsEditor) == 'false' AND $(ModuleId) != '' AND Exists($(GameFolder))">
+	<Target Name="CopyNativeBinariesWindows" Condition="$(BuildForWindowsEditor) == 'false' AND $(ModuleId) != '' AND Exists($(GameFolder))">
 		<CreateDirectory Directory="$(GameFolder)/Modules/$(ModuleId)/bin/Win64_Shipping_Client" />
 		<CopyFolder FromDirectory="$(SolutionDir)x64/$(Configuration)/" ToDirectory="$(GameFolder)/Modules/$(ModuleId)/bin/Win64_Shipping_Client" Regex="$(PostBuildCopyToModulesRegex)" Clean="false" />
 	</Target>
 
-	<Target Name="CopyNativeBinariesWindowsEditor" AfterTargets="PostBuildEvent" Condition="$(BuildForWindowsEditor) == 'true' AND $(ModuleId) != '' AND Exists($(GameFolder))">
+	<Target Name="CopyNativeBinariesWindowsEditor" Condition="$(BuildForWindowsEditor) == 'true' AND $(ModuleId) != '' AND Exists($(GameFolder))">
 		<CreateDirectory Directory="$(GameFolder)/Modules/$(ModuleId)/bin/Win64_Shipping_wEditor" />
 		<CopyFolder FromDirectory="$(SolutionDir)x64/$(Configuration)/" ToDirectory="$(GameFolder)/Modules/$(ModuleId)/bin/Win64_Shipping_wEditor" Regex="$(PostBuildCopyToModulesRegex)" Clean="false" />
 	</Target>

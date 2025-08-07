@@ -17,25 +17,25 @@ namespace NativeHook
 
         #region Offsets
         /// <summary>
-        /// Vec3;
+        /// BoneTransformation;
         /// </summary>
-        internal const int transformation_quat = 0x4;
+        internal const int transformation = 0x4;
         /// <summary>
-        /// Vec3;
+        /// BoneTransformation;
         /// </summary>
-        internal const int transformation_pos = 0x14;
-
-#if Editor
+        internal const int local_transformation = 0x30;
         /// <summary>
         /// MatrixFrame;
         /// </summary>
         internal const int local_rest_frame = 0x60;
-#else
-        /// <summary>
-        /// MatrixFrame;
-        /// </summary>
-        internal const int local_rest_frame = 0x40;
-#endif
         #endregion
+    }
+
+    public struct BoneTransformation
+    {
+        public Quaternion q;
+        public Vec3 o;
+
+        public static BoneTransformation Identity = new BoneTransformation { o = Vec3.Zero, q = Quaternion.Identity };
     }
 }

@@ -29,9 +29,18 @@ namespace NativeHook
         [DllImport("NativeHookUnmanaged.dll")]
         private static extern void NH_Initialize(IntPtr nativeDllAddress, IntPtr nativeDllSize);
         [DllImport("NativeHookUnmanaged.dll")]
-        private static extern void NH_FillCallbacks(IntPtr postAiTick, IntPtr postAgentTick, IntPtr afterUpdateDynamicsFlags);
+
+        private static extern void NH_FillCallbacks(IntPtr postAiTick, IntPtr postAgentTick, IntPtr afterUpdateDynamicsFlags, IntPtr onAnimTreeTick);
         [DllImport("NativeHookUnmanaged.dll")]
         private static extern void NH_Cleanup();
+        [DllImport("NativeHookUnmanaged.dll")]
+        private static extern IntPtr NH_ManagedScanFor(IntPtr baseAddress, UIntPtr bufferSize, [MarshalAs(UnmanagedType.LPStr)]string signature, [MarshalAs(UnmanagedType.LPStr)] string errorMsgName);
+
+#if DEBUG
+        [DllImport("NativeHookUnmanaged.dll")]
+        private static extern void NH_FillDebugMethodCallback(IntPtr debugMethod);
+#endif
+        
 
         protected override void OnSubModuleLoad()
         {
@@ -56,9 +65,16 @@ namespace NativeHook
             
             GetManagedObjWithId = AccessTools.Method(typeof(DotNetObject), "GetManagedObjectWithId", new Type[] { typeof(int) });
             NH_Initialize(NativeDLLAddr, new IntPtr(NativeDLLSize));
-
+            var bufferSize = new UIntPtr(Convert.ToUInt64(NativeDLLSize));
+#if Editor
+            UnkownBoneMatrixFrameBuffer = NativeDLLAddr + 0x1725990;
+            Agent_SetAnimSystemAddr = NH_ManagedScanFor(NativeDLLAddr, bufferSize, "48 89 5c 24 08 48 89 74 24 10 57 48 83 ec 30 48 8b d9 33 f6 48 8b 89 98 05 00 00", "Agent_SetAnimSystemAddr");
+#else
+            UnkownBoneMatrixFrameBuffer = NativeDLLAddr + 0xc86890;
+            Agent_SetAnimSystemAddr = NH_ManagedScanFor(NativeDLLAddr, bufferSize, "48 89 5c 24 08 48 89 74 24 10 57 48 83 ec 20 48 8b d9 33 f6 48 8b 89 90", "Agent_SetAnimSystemAddr");
+#endif
+            call_Agent_SetAnimSystem = Marshal.GetDelegateForFunctionPointer<Agent_SetAnimSystemDelegate>(Agent_SetAnimSystemAddr);
             FillNativeCallbacks();
-            
         }
 
         protected override void OnSubModuleUnloaded()
@@ -83,16 +99,21 @@ namespace NativeHook
             CallbackDelegates.Add(onPostAgentTick);
             var afterUpdateDynamicsFlags = new Callback_AfterUpdateDynamicsFlagsDelegate(Callback_AfterUpdateDynamicsFlags);
             CallbackDelegates.Add(afterUpdateDynamicsFlags);
+            var onAnimTreeTick = new Callback_OnAnimTreeTickDelegate(Callback_OnAnimTreeTick);
+            CallbackDelegates.Add(onAnimTreeTick);
             NH_FillCallbacks(Marshal.GetFunctionPointerForDelegate(onPostAiTick),
                 Marshal.GetFunctionPointerForDelegate(onPostAgentTick),
-                Marshal.GetFunctionPointerForDelegate(afterUpdateDynamicsFlags));
+                Marshal.GetFunctionPointerForDelegate(afterUpdateDynamicsFlags),
+                Marshal.GetFunctionPointerForDelegate(onAnimTreeTick));
+#if DEBUG
+
+            var debugMethod = new Callback_DebugMethodDelegate(Callback_DebugMethod);
+            CallbackDelegates.Add(debugMethod);
+            NH_FillDebugMethodCallback(Marshal.GetFunctionPointerForDelegate(debugMethod));
+#endif
         }
 
-        /*
-            Agent_SetAnimSystemAddr = ScanForFirstResult(buffer, "48 89 5c 24 08 48 89 74 24 10 57 48 83 ec 30 48 8b d9 33 f6 48 8b 89 98 05 00 00");
-        NON-EDITOR:
-            Agent_SetAnimSystemAddr = ScanForFirstResult(buffer, "48 89 5c 24 08 48 89 74 24 10 57 48 83 ec 20 48 8b d9 33 f6 48 8b 89 90");
-        */
+        public static IntPtr UnkownBoneMatrixFrameBuffer;
 
         #region AI Tick
         public delegate void OnPostAiTickDelegate(Agent agent, float dt);
@@ -107,8 +128,7 @@ namespace NativeHook
             if (Mission.Current == null || agentObj == null || ev == null) return;
             ev(agentObj, dt);
         }
-
-#endregion
+        #endregion
 
         #region Agent Tick
         public delegate void OnPostAgentTickDelegate(Agent agent, float dt);
@@ -124,12 +144,12 @@ namespace NativeHook
         }
         #endregion
 
-        /*#region Agent Set Animation System
+        #region Agent Set Animation System
         private static IntPtr Agent_SetAnimSystemAddr;
         [UnmanagedFunctionPointer(CallingConvention.ThisCall, SetLastError = true)]
         public delegate void Agent_SetAnimSystemDelegate(UIntPtr agent, UIntPtr newAnimSystem);
         public static Agent_SetAnimSystemDelegate call_Agent_SetAnimSystem;
-        #endregion*/
+        #endregion
 
         #region Agent Movement And Dynamics Update Flags
         public delegate void AfterUpdateDynamicsFlagsDelegate(Agent agent, float dt, AgentDynamicsFlags oldFlags, AgentDynamicsFlags newFlags);
@@ -146,6 +166,60 @@ namespace NativeHook
                 ev(agent, dt, oldFlags, newFlags);
             }
         }
-#endregion
+        #endregion
+
+        #region Anim Tree Tick
+        public delegate void OnAnimTreeTickDelegate(Skeleton skeleton, byte lastBoneIndex, ref MatrixFrame[] cachedMatrixFrame);
+        public static event OnAnimTreeTickDelegate OnAnimTreeTick;
+        private delegate void Callback_OnAnimTreeTickDelegate(IntPtr animTreePtr, IntPtr skeletonPtr, byte lastBoneIndex, [In, Out, MarshalAs(UnmanagedType.LPArray, SizeConst = 4)] IntPtr[] cachedMatrixFramePtrsArray);
+        unsafe static private void Callback_OnAnimTreeTick(IntPtr animTreePtr, IntPtr skeletonPtr, byte lastBoneIndex, [In, Out, MarshalAs(UnmanagedType.LPArray, SizeConst = 4)] IntPtr[] cachedMatrixFramePtrsArray)
+        {
+            var ev = OnAnimTreeTick;
+            if (ev != null)
+            {
+                //ev(null, lastBoneIndex, ref cachedMatrixFrameArray);
+            }
+            /*var unsginedSkeletonPtr = new UIntPtr(skeletonPtr.ToPointer());
+
+            var IManaged = AccessTools.Field("TaleWorlds.DotNet.LibraryApplicationInterface:IManaged").GetValue(null);
+            var DecreaseReferenceCount = AccessTools.Method("TaleWorlds.DotNet.IManaged:DecreaseReferenceCount");
+
+            if (IManaged == null || DecreaseReferenceCount == null) return;
+
+            var skeleton = (Skeleton)AccessTools.Constructor(typeof(Skeleton), new Type[] { typeof(UIntPtr) })?.Invoke(new object[] { unsginedSkeletonPtr });
+            if (skeleton == null) return;
+
+            DecreaseReferenceCount.Invoke(IManaged, new object[] { unsginedSkeletonPtr });
+            // Copying event to a local variable prevents a race condition when another thread unsubscribes from event
+            var ev = OnAnimTreeTick;
+            if (ev != null)
+            {
+                var cachedMatrixFrame = *(MatrixFrame*)cachedMatrixFramePtr.ToPointer();
+                ev(skeleton, boneIndex, ref cachedMatrixFrame);
+            }
+            */
+        }
+        #endregion
+
+        #region DebugMethod
+#if DEBUG
+        private delegate void Callback_DebugMethodDelegate(IntPtr animTreePtr, UIntPtr skeletonPtr);
+        unsafe static private void Callback_DebugMethod(IntPtr animTreePtr, UIntPtr skeletonPtr)
+        {
+            /*if (Input.IsKeyDown(InputKey.M) && Agent.Main.AgentVisuals.GetSkeleton().Pointer == skeletonPtr)
+            {
+                /*var matPtr = (MatrixFrame*)cachedMatrixFramePtrsArray[1];
+                var restFrame = *(MatrixFrame*)((*(ulong*)((byte*)skeletonPtr + rglSkeleton.bones) + rglBoneStruct.size * 12 + rglBoneStruct.local_rest_frame));
+                var scaleFactor = 2;
+                matPtr->Scale(Vec3.One * scaleFactor);
+                matPtr->origin -= restFrame.origin;
+                var b = new BoneTransformation();
+                b.q = Quaternion.QuaternionFromEulerAngles(0.2f, 0.5f, 0.5f);
+                b.o = Vec3.Zero;
+                rglSkeleton.SetBoneLocalTransformation(Agent.Main.AgentVisuals.GetSkeleton(), 13, b);
+            }*/
+        }
+#endif
+        #endregion
     }
 }

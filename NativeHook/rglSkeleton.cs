@@ -18,11 +18,36 @@ namespace NativeHook
     {
         #region Extension Methods
         private static MethodBase GetPtr = AccessTools.Method(typeof(Agent), "GetPtr");
-        public unsafe static void SetBoneRestFrame(this Skeleton skeleton, byte boneIndex, MatrixFrame newFrame)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <see cref="GetSkeletonSpecificBoneRestFrame"/>
+        public unsafe static void SetSkeletonSpecificBoneRestFrame(this Skeleton skeleton, byte boneIndex, MatrixFrame newFrame)
         {
             var bone = *(ulong*)(skeleton.Pointer + bones).ToPointer();
             MatrixFrame* localRestFrame = (MatrixFrame*)(bone + (uint)boneIndex * rglBoneStruct.size + rglBoneStruct.local_rest_frame);
             *localRestFrame = newFrame;
+        }
+        /// <summary>
+        /// Difference between this and "Skeleton.GetBoneEntitialRestFrame" and "Skeleton.GetBoneLocalRestFrame" is that the others
+        /// get the rest frame from the skeleton model (i.e. all skeletons of the same type) not this specific skeleton instance
+        /// </summary>
+        /// <returns>Rest MatrixFrame of the bone with respect to the entity's origin</returns>
+        public unsafe static MatrixFrame GetSkeletonSpecificBoneRestFrame(this Skeleton skeleton, byte boneIndex)
+        {
+            var bone = *(ulong*)(skeleton.Pointer + bones).ToPointer();
+            return *(MatrixFrame*)(bone + (uint)boneIndex * rglBoneStruct.size + rglBoneStruct.local_rest_frame);
+        }
+        public unsafe static void SetBoneLocalTransformation(this Skeleton skeleton, byte boneIndex, BoneTransformation newTransformation)
+        {
+            var bone = *(ulong*)(skeleton.Pointer + bones).ToPointer();
+            BoneTransformation* localTransform = (BoneTransformation*)(bone + (uint)boneIndex * rglBoneStruct.size + rglBoneStruct.local_transformation);
+            *localTransform = newTransformation;
+        }
+        public unsafe static BoneTransformation GetBoneLocalTransformation(this Skeleton skeleton, byte boneIndex)
+        {
+            var bone = *(ulong*)(skeleton.Pointer + bones).ToPointer();
+            return *(BoneTransformation*)(bone + (uint)boneIndex * rglBoneStruct.size + rglBoneStruct.local_transformation);
         }
         internal unsafe static MatrixFrame GetBoneCachedTransformationFrame(this Skeleton skeleton, byte boneIndex)
         {
@@ -33,26 +58,31 @@ namespace NativeHook
             SetBoneCachedTransformationFrame(skeleton.Pointer, boneIndex, newFrame);
         }
 
+        /// <summary>
+        /// Best not to use this as it depends on fixed offsets that could change with updates
+        /// </summary>
         internal unsafe static MatrixFrame GetBoneCachedTransformationFrame(UIntPtr skeletonPointer, byte boneIndex)
         {
-            return MatrixFrame.Identity;
-            /*var skeletonCacheIndex = *(int*)(skeletonPointer + cache_index).ToPointer();
+            var skeletonCacheIndex = *(int*)(skeletonPointer + cache_index).ToPointer();
             var combinedIndex = (long)(boneIndex + skeletonCacheIndex);
-            var dat = *(long*)(NativeHookSubModule.NativeDLLAddr + NativeHookSubModule.UnkownBoneMatrixFrameBuffer).ToPointer();
+            var dat = *(long*)(NativeHookSubModule.UnkownBoneMatrixFrameBuffer).ToPointer();
             long boneMatrixFrameBuffer = *(int*)(dat + 0xe78) * 0x128 + dat + 0xc28;
             long chunkId = combinedIndex >> 13;
             var m = (MatrixFrame*)(*(long*)(boneMatrixFrameBuffer + sizeof(IntPtr) + chunkId * sizeof(IntPtr)) + (combinedIndex + chunkId * -8192L) * sizeof(MatrixFrame));
-            return *m;*/
+            return *m;
         }
+        /// <summary>
+        /// Best not to use this as it depends on fixed offsets that could change with updates
+        /// </summary>
         internal unsafe static void SetBoneCachedTransformationFrame(UIntPtr skeletonPointer, byte boneIndex, MatrixFrame newFrame)
         {
-            /*var skeletonCacheIndex = *(int*)(skeletonPointer + cache_index).ToPointer();
+            var skeletonCacheIndex = *(int*)(skeletonPointer + cache_index).ToPointer();
             var combinedIndex = (long)(boneIndex + skeletonCacheIndex);
-            var dat = *(long*)(NativeHookSubModule.NativeDLLAddr + NativeHookSubModule.UnkownBoneMatrixFrameBuffer).ToPointer();
+            var dat = *(long*)(NativeHookSubModule.UnkownBoneMatrixFrameBuffer).ToPointer();
             long boneMatrixFrameBuffer = *(int*)(dat + 0xe78) * 0x128 + dat + 0xc28;
             long chunkId = combinedIndex >> 13;
             var m = (MatrixFrame*)(*(long*)(boneMatrixFrameBuffer + sizeof(IntPtr) + chunkId * sizeof(IntPtr)) + (combinedIndex + chunkId * -8192L) * sizeof(MatrixFrame));
-            *m = newFrame;*/
+            *m = newFrame;
         }
         #endregion
 

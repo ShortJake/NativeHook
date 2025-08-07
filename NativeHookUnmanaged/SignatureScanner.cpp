@@ -55,12 +55,12 @@ LPCVOID ScanForFirstResult(LPVOID baseAddress, vector<BYTE>* buffer, vector<int>
     return 0;
 }
 
-vector<LPCVOID> ScanForAllResults(LPVOID baseAddress, vector<BYTE>* buffer, vector<int>* signature, string functionName)
+vector<LPCVOID> ScanForAllResults(LPVOID baseAddress, vector<BYTE>* buffer, vector<int>* signature, string errorMsgName)
 {
     vector<LPCVOID> hits;
     if (buffer == NULL || signature == NULL)
     {
-        cout << "Failed to find address for function " + functionName + ". Null buffer or signature";
+        cout << "Failed to find address for function " + errorMsgName + ". Null buffer or signature";
         return hits;
     }
     for (int i = 0; i < buffer->size(); i++)
@@ -75,18 +75,29 @@ vector<LPCVOID> ScanForAllResults(LPVOID baseAddress, vector<BYTE>* buffer, vect
             }
         }
     }
-    if (hits.empty()) cout << "Failed to find any matches for function " + functionName;
+    if (hits.empty()) cout << "Failed to find any matches for function " + errorMsgName;
     return hits;
 }
 
-LPCVOID ScanForFirstResult(LPVOID baseAddress, vector<BYTE>* buffer, string signature, string functionName)
+LPCVOID ScanForFirstResult(LPVOID baseAddress, vector<BYTE>* buffer, string signature, string errorMsgName)
 {
     vector<int> signatureBytes = ParseSignatureString(signature);
-    return ScanForFirstResult(baseAddress, buffer, &signatureBytes, functionName);
+    return ScanForFirstResult(baseAddress, buffer, &signatureBytes, errorMsgName);
 }
 
-vector<LPCVOID> ScanForAllResults(LPVOID baseAddress, vector<BYTE>* buffer, string signature, string functionName)
+vector<LPCVOID> ScanForAllResults(LPVOID baseAddress, vector<BYTE>* buffer, string signature, string errorMsgName)
 {
     vector<int> signatureBytes = ParseSignatureString(signature);
-    return ScanForAllResults(baseAddress, buffer, &signatureBytes, functionName);
+    return ScanForAllResults(baseAddress, buffer, &signatureBytes, errorMsgName);
+}
+
+extern "C" __declspec(dllexport)
+LPCVOID NH_ManagedScanFor(LPVOID baseAddress, SIZE_T buffer_size, const char* signature, const char* errorMsgName)
+{
+    string sig(signature);
+    string errorMsg(errorMsgName);
+    vector<BYTE> buffer = GetMemoryBuffer(baseAddress, buffer_size);
+    LPCVOID result = ScanForFirstResult(baseAddress, &buffer, sig, errorMsg);
+    buffer.clear();
+    return result;
 }
