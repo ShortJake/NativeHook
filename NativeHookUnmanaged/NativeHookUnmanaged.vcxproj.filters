@@ -45,6 +45,9 @@
     <ClInclude Include="rglAgentRecord.h">
       <Filter>Header Files\RGL</Filter>
     </ClInclude>
+    <ClInclude Include="Structs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">

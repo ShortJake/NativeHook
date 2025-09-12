@@ -13,12 +13,15 @@ using TaleWorlds.Engine;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using System.Net;
+using System.Security.Policy;
+using TaleWorlds.Engine.GauntletUI;
 
 namespace NativeHook
 {
     public class NativeHookSubModule : MBSubModuleBase
     {
         private Color ErrorColor;
+        private ModConfigStruct Config;
         public static IntPtr NativeDLLAddr;
         private static int NativeDLLSize;
         //Prevent GC'ing of delegates
@@ -27,10 +30,11 @@ namespace NativeHook
         private static MethodBase GetManagedObjWithId;
 
         [DllImport("NativeHookUnmanaged.dll")]
-        private static extern void NH_Initialize(IntPtr nativeDllAddress, IntPtr nativeDllSize);
+        private static extern void NH_Initialize(IntPtr nativeDllAddress, IntPtr nativeDllSize, ModConfigStruct configs);
         [DllImport("NativeHookUnmanaged.dll")]
 
-        private static extern void NH_FillCallbacks(IntPtr postAiTick, IntPtr postAgentTick, IntPtr afterUpdateDynamicsFlags, IntPtr onAnimTreeTick);
+        private static extern void NH_FillCallbacks(MethodCallbackAddressStruct sigHolder);
+        //private static extern void NH_FillCallbacks(IntPtr postAiTick, IntPtr postAgentTick, IntPtr afterUpdateDynamicsFlags, IntPtr onAnimTreeTick);
         [DllImport("NativeHookUnmanaged.dll")]
         private static extern void NH_Cleanup();
         [DllImport("NativeHookUnmanaged.dll")]
@@ -46,6 +50,14 @@ namespace NativeHook
         {
             base.OnSubModuleLoad();
             ErrorColor = new Color(1f, 0.2f, 0.15f);
+            Config = new ModConfigStruct
+            {
+                EnableAgentTick = true,
+                EnableAiTick = true,
+                EnableUpdateDynamicsFlags = true,
+                EnableAnimTreeTick = false,
+                EnableAnimGetEntitialQuat = false
+            };
             var proc = Process.GetCurrentProcess();
             foreach (ProcessModule module in proc.Modules)
             {
@@ -64,16 +76,19 @@ namespace NativeHook
             }
             
             GetManagedObjWithId = AccessTools.Method(typeof(DotNetObject), "GetManagedObjectWithId", new Type[] { typeof(int) });
-            NH_Initialize(NativeDLLAddr, new IntPtr(NativeDLLSize));
+            NH_Initialize(NativeDLLAddr, new IntPtr(NativeDLLSize), Config);
             var bufferSize = new UIntPtr(Convert.ToUInt64(NativeDLLSize));
 #if Editor
             UnkownBoneMatrixFrameBuffer = NativeDLLAddr + 0x1725990;
             Agent_SetAnimSystemAddr = NH_ManagedScanFor(NativeDLLAddr, bufferSize, "48 89 5c 24 08 48 89 74 24 10 57 48 83 ec 30 48 8b d9 33 f6 48 8b 89 98 05 00 00", "Agent_SetAnimSystemAddr");
+            rglSkeletonAnim_SetEntitialQuatAddr = NH_ManagedScanFor(NativeDLLAddr, bufferSize, "48 89 5c 24 10 48 89 6c 24 18 48 89 74 24 20 57 48 83 ec 30 49 8b e9", "rglSkeletonAnim_SetInEntitialQuat");
 #else
             UnkownBoneMatrixFrameBuffer = NativeDLLAddr + 0xc86890;
             Agent_SetAnimSystemAddr = NH_ManagedScanFor(NativeDLLAddr, bufferSize, "48 89 5c 24 08 48 89 74 24 10 57 48 83 ec 20 48 8b d9 33 f6 48 8b 89 90", "Agent_SetAnimSystemAddr");
+            rglSkeletonAnim_SetEntitialQuatAddr = NH_ManagedScanFor(NativeDLLAddr, bufferSize, "48 89 5c 24 08 48 89 74 24 10 57 48 83 ec 20 48 8b d9 48 0f be f2", "rglSkeletonAnim_SetInEntitialQuat");
 #endif
             call_Agent_SetAnimSystem = Marshal.GetDelegateForFunctionPointer<Agent_SetAnimSystemDelegate>(Agent_SetAnimSystemAddr);
+            call_rglSkeletonAnim_SetEntitialQuat = Marshal.GetDelegateForFunctionPointer<rglSkeletonAnim_SetEntitialQuatDelegate>(rglSkeletonAnim_SetEntitialQuatAddr);
             FillNativeCallbacks();
         }
 
@@ -101,10 +116,17 @@ namespace NativeHook
             CallbackDelegates.Add(afterUpdateDynamicsFlags);
             var onAnimTreeTick = new Callback_OnAnimTreeTickDelegate(Callback_OnAnimTreeTick);
             CallbackDelegates.Add(onAnimTreeTick);
-            NH_FillCallbacks(Marshal.GetFunctionPointerForDelegate(onPostAiTick),
-                Marshal.GetFunctionPointerForDelegate(onPostAgentTick),
-                Marshal.GetFunctionPointerForDelegate(afterUpdateDynamicsFlags),
-                Marshal.GetFunctionPointerForDelegate(onAnimTreeTick));
+            var animGetEntitialQuat = new Callback_AnimGetEntitialQuatDelegate(Callback_AnimGetEntitialQuat);
+            CallbackDelegates.Add(animGetEntitialQuat);
+            var sigHolder = new MethodCallbackAddressStruct
+            {
+                OnPostAiTick = Marshal.GetFunctionPointerForDelegate(onPostAiTick),
+                OnPostAgentTick = Marshal.GetFunctionPointerForDelegate(onPostAgentTick),
+                AfterUpdateDynamicsFlags = Marshal.GetFunctionPointerForDelegate(afterUpdateDynamicsFlags),
+                OnAnimTreeTick = Marshal.GetFunctionPointerForDelegate(onAnimTreeTick),
+                AnimGetEntitialQuat = Marshal.GetFunctionPointerForDelegate(animGetEntitialQuat),
+            };
+            NH_FillCallbacks(sigHolder);
 #if DEBUG
 
             var debugMethod = new Callback_DebugMethodDelegate(Callback_DebugMethod);
@@ -201,23 +223,60 @@ namespace NativeHook
         }
         #endregion
 
+        #region Anim Get Entitial Quat 
+        private delegate void Callback_AnimGetEntitialQuatDelegate(IntPtr animPtr, IntPtr skeletonModelPtr, sbyte boneIndex);
+        unsafe static private void Callback_AnimGetEntitialQuat(IntPtr animPtr, IntPtr skeletonModelPtr, sbyte boneIndex)
+        {  
+            var outQuat = rglSkeletonAnim.GetOutQuat(animPtr, boneIndex);
+            if (outQuat.IsUnit) return;
+
+            var parentIndex = *(sbyte*)(skeletonModelPtr + rglSkeletonModel.bone_parents + boneIndex).ToPointer();
+            var parentQuat = Quaternion.Identity;
+            var parentPastTrans = BoneTransformation.Identity;
+            var modelBonesArray = (byte*)(*(ulong*)(skeletonModelPtr + rglSkeletonModel.bones_array).ToPointer());
+            var skeleton = *(ulong*)(animPtr + rglSkeletonAnim.skeleton).ToPointer();
+            var skeletonBonesArray = *(ulong*)(skeleton + rglSkeleton.bones);
+            if (parentIndex > -1)
+            {
+                parentQuat = rglSkeletonAnim.GetOutEntitialQuat(animPtr, parentIndex);
+                if (!parentQuat.IsUnit)
+                {
+                    Callback_AnimGetEntitialQuat(animPtr, skeletonModelPtr, parentIndex);
+                    parentQuat = rglSkeletonAnim.GetOutEntitialQuat(animPtr, parentIndex);
+                }
+                parentPastTrans = *(BoneTransformation*)(skeletonBonesArray + (uint)parentIndex * rglBoneStruct.size + rglBoneStruct.transformation);
+            }     
+            var pastTrans = *(BoneTransformation*)(skeletonBonesArray + (uint)boneIndex * rglBoneStruct.size + rglBoneStruct.transformation);
+            var pastLocalQuat = parentPastTrans.q.TransformToLocal(pastTrans.q);
+            if (!pastLocalQuat.IsUnit)
+            {
+   
+                var localRestFrame = *(MatrixFrame*)(modelBonesArray + boneIndex * rglBoneModelStruct.size + rglBoneModelStruct.local_rest_frame);
+                var newInQuat = localRestFrame.rotation.ToQuaternion();
+                newInQuat = parentQuat.TransformToParent(newInQuat);
+                rglSkeletonAnim.SetOutQuat(animPtr, boneIndex, newInQuat, skeletonModelPtr);
+            }
+            else
+            {
+                pastLocalQuat = parentQuat.TransformToParent(pastLocalQuat);
+                rglSkeletonAnim.SetOutQuat(animPtr, boneIndex, pastLocalQuat, skeletonModelPtr);
+            }   
+        }
+        #endregion
+        
+        #region Anim Set Entitial Quaternion
+        private static IntPtr rglSkeletonAnim_SetEntitialQuatAddr;
+        [UnmanagedFunctionPointer(CallingConvention.ThisCall, SetLastError = true)]
+        public delegate void rglSkeletonAnim_SetEntitialQuatDelegate(IntPtr rglSkeletonAnim, sbyte boneIndex, Quaternion newEntitialQuat, IntPtr skeletonModel);
+        public static rglSkeletonAnim_SetEntitialQuatDelegate call_rglSkeletonAnim_SetEntitialQuat;
+        #endregion
+
         #region DebugMethod
 #if DEBUG
-        private delegate void Callback_DebugMethodDelegate(IntPtr animTreePtr, UIntPtr skeletonPtr);
-        unsafe static private void Callback_DebugMethod(IntPtr animTreePtr, UIntPtr skeletonPtr)
+        private delegate void Callback_DebugMethodDelegate(IntPtr animPtr, IntPtr skeletonModelPtr, byte boneIndex, IntPtr outQuat);
+        unsafe static private void Callback_DebugMethod(IntPtr animPtr, IntPtr skeletonModelPtr, byte boneIndex, IntPtr outQuat)
         {
-            /*if (Input.IsKeyDown(InputKey.M) && Agent.Main.AgentVisuals.GetSkeleton().Pointer == skeletonPtr)
-            {
-                /*var matPtr = (MatrixFrame*)cachedMatrixFramePtrsArray[1];
-                var restFrame = *(MatrixFrame*)((*(ulong*)((byte*)skeletonPtr + rglSkeleton.bones) + rglBoneStruct.size * 12 + rglBoneStruct.local_rest_frame));
-                var scaleFactor = 2;
-                matPtr->Scale(Vec3.One * scaleFactor);
-                matPtr->origin -= restFrame.origin;
-                var b = new BoneTransformation();
-                b.q = Quaternion.QuaternionFromEulerAngles(0.2f, 0.5f, 0.5f);
-                b.o = Vec3.Zero;
-                rglSkeleton.SetBoneLocalTransformation(Agent.Main.AgentVisuals.GetSkeleton(), 13, b);
-            }*/
+            
         }
 #endif
         #endregion

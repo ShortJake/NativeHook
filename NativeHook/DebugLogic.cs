@@ -44,47 +44,6 @@ namespace NativeHook
         public override void OnMissionTick(float dt)
         {
             if (Agent.Main == null) return;
-            if (_oldSkeleton == null) _oldSkeleton = Agent.Main.AgentVisuals.GetSkeleton();
-            if (Input.IsKeyPressed(InputKey.M))
-            {
-                /*for (byte j = 0; j < _oldSkeleton.GetBoneCount(); j++)
-                {
-                    MBDebug.RenderDebugFrame(Agent.Main.AgentVisuals.GetGlobalFrame().TransformToParent(_oldSkeleton.GetBoneRestFrame(j)), 0.2f, 10f);
-                }*/
-                var localFrame = _oldSkeleton.GetBoneLocalRestFrame(13);
-                localFrame.Advance(0.5f);
-                SetPropertyUnsafe(localFrame, _oldSkeleton.Pointer, rglSkeleton.skeleton_model, 0x140, 13 * 0x1b0 + 0x50UL);
-            }
-            if (Input.IsKeyPressed(InputKey.Comma))
-            {
-                for (sbyte j = 0; j < _oldSkeleton.GetBoneCount(); j++)
-                {
-                    MBDebug.RenderDebugFrame(Agent.Main.AgentVisuals.GetGlobalFrame().TransformToParent(_oldSkeleton.GetBoneEntitialRestFrame(j)), 0.2f, 10f);
-                }
-            }
-            if (Input.IsKeyPressed(InputKey.K))
-            {
-                var currentSkeleton = Agent.Main.AgentVisuals.GetSkeleton();
-                if (currentSkeleton == _oldSkeleton && _newSkeleton == null)
-                {
-                    var animData = Agent.Main.Monster.FillAnimationSystemData(Agent.Main.ActionSet, 1f, false);
-                    var skin = new SkinGenerationParams((int)SkinMask.AllVisible, Equipment.UnderwearTypes.NoUnderwear, 0, 0, 0, 0, true, 0f, Agent.Main.IsFemale ? 1 : 0, 0, false, false);
-                    _newSkeleton = MBSkeletonExtensions.CreateWithActionSet(ref animData);
-                    Agent.Main.SetSkeleton(_newSkeleton, animData);
-                    Agent.Main.AgentVisuals.ClearVisualComponents(false);
-                    Agent.Main.AgentVisuals.AddSkinMeshes(skin, Agent.Main.BodyPropertiesValue, true, false);
-                }
-                else if (currentSkeleton == _oldSkeleton)
-                {
-                    var animData = Agent.Main.Monster.FillAnimationSystemData(Agent.Main.ActionSet, 1f, false);
-                    Agent.Main.SetSkeleton(_newSkeleton, animData);
-                }
-                else if (currentSkeleton == _newSkeleton)
-                {
-                    var animData = Agent.Main.Monster.FillAnimationSystemData(Agent.Main.ActionSet, 1f, false);
-                    Agent.Main.SetSkeleton(_oldSkeleton, animData);
-                }
-            }
         }
         public override void OnPreMissionTick(float dt)
         {

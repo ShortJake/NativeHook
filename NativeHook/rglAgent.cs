@@ -38,6 +38,13 @@ namespace NativeHook
             agent.SetActionSet(ref animData);
             InitializeAgentRecord.Invoke(agent, new object[] { });
         }
+
+        public unsafe static void SetMovementLockedState(this Agent agent, AgentMovementLockedState newState)
+        {
+            if (agent == null) throw new ArgumentNullException();
+            UIntPtr agentPointer = agent.GetPointer();
+            *(AgentMovementLockedState*)(agentPointer + movement_locked_state) = newState;
+        }
         #endregion
 
         #region Offsets
@@ -69,15 +76,16 @@ namespace NativeHook
         /// Agent.MovementControlFlag;
         /// </summary>
         internal const int movement_control_flags = 0x4c8;
-        /// <summary>
-        /// MatrixFrame;
-        /// </summary>
 #if Editor
         internal const int rotation_frame = 0x528;
         /// <summary>
         /// UIntPtr/ulong;
         /// </summary>
         internal const int agent_anim_system = 0x598;
+        /// <summary>
+        /// Agent.MovementLockedState;
+        /// </summary>
+        internal const int movement_locked_state = 0x600;
         /// <summary>
         /// UIntPtr/ulong;
         /// </summary>
@@ -104,6 +112,10 @@ namespace NativeHook
         /// UIntPtr/ulong;
         /// </summary>
         internal const int agent_anim_system = 0x590;
+        // <summary>
+        /// Agent.MovementLockedState;
+        /// </summary>
+        internal const int movement_locked_state = 0x5f8;
         /// <summary>
         /// UIntPtr/ulong;
         /// </summary>

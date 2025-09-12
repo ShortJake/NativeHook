@@ -18,14 +18,12 @@ namespace NativeHook
     {
         #region Extension Methods
         private static MethodBase GetPtr = AccessTools.Method(typeof(Agent), "GetPtr");
-        /// <summary>
-        /// 
-        /// </summary>
+        /// <summary/>
         /// <see cref="GetSkeletonSpecificBoneRestFrame"/>
         public unsafe static void SetSkeletonSpecificBoneRestFrame(this Skeleton skeleton, byte boneIndex, MatrixFrame newFrame)
         {
             var bone = *(ulong*)(skeleton.Pointer + bones).ToPointer();
-            MatrixFrame* localRestFrame = (MatrixFrame*)(bone + (uint)boneIndex * rglBoneStruct.size + rglBoneStruct.local_rest_frame);
+            MatrixFrame* localRestFrame = (MatrixFrame*)(bone + (uint)boneIndex * rglBoneStruct.size + rglBoneStruct.rest_frame);
             *localRestFrame = newFrame;
         }
         /// <summary>
@@ -36,12 +34,23 @@ namespace NativeHook
         public unsafe static MatrixFrame GetSkeletonSpecificBoneRestFrame(this Skeleton skeleton, byte boneIndex)
         {
             var bone = *(ulong*)(skeleton.Pointer + bones).ToPointer();
-            return *(MatrixFrame*)(bone + (uint)boneIndex * rglBoneStruct.size + rglBoneStruct.local_rest_frame);
+            return *(MatrixFrame*)(bone + (uint)boneIndex * rglBoneStruct.size + rglBoneStruct.rest_frame);
         }
         public unsafe static void SetBoneLocalTransformation(this Skeleton skeleton, byte boneIndex, BoneTransformation newTransformation)
         {
             var bone = *(ulong*)(skeleton.Pointer + bones).ToPointer();
             BoneTransformation* localTransform = (BoneTransformation*)(bone + (uint)boneIndex * rglBoneStruct.size + rglBoneStruct.local_transformation);
+            *localTransform = newTransformation;
+        }
+        public unsafe static BoneTransformation GetBoneEntitialTransformation(this Skeleton skeleton, byte boneIndex)
+        {
+            var bone = *(ulong*)(skeleton.Pointer + bones).ToPointer();
+            return *(BoneTransformation*)(bone + (uint)boneIndex * rglBoneStruct.size + rglBoneStruct.transformation);
+        }
+        public unsafe static void SetBoneEntitialTransformation(this Skeleton skeleton, byte boneIndex, BoneTransformation newTransformation)
+        {
+            var bone = *(ulong*)(skeleton.Pointer + bones).ToPointer();
+            BoneTransformation* localTransform = (BoneTransformation*)(bone + (uint)boneIndex * rglBoneStruct.size + rglBoneStruct.transformation);
             *localTransform = newTransformation;
         }
         public unsafe static BoneTransformation GetBoneLocalTransformation(this Skeleton skeleton, byte boneIndex)
@@ -99,6 +108,10 @@ namespace NativeHook
         /// int;
         /// </summary>
         internal const int cache_index = 0x44;
+        /// <summary>
+        /// UIntPtr/ulong;
+        /// </summary>
+        internal const int skeleton_scale = 0xd8;
 #if Editor
         /// <summary>
         /// Vec3;

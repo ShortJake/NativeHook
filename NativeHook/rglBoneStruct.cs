@@ -27,7 +27,7 @@ namespace NativeHook
         /// <summary>
         /// MatrixFrame;
         /// </summary>
-        internal const int local_rest_frame = 0x60;
+        internal const int rest_frame = 0x60;
         #endregion
     }
 
