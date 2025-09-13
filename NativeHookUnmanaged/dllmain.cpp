@@ -160,30 +160,48 @@ void GetFunctionAddresses()
 
 void CreateAllHooks()
 {
-    if (!Config.EnableAiTick && MH_CreateHook((LPVOID)Agent_AiTick_Address, &Hooked_Agent_AiTick, (LPVOID*)(&Original_Agent_AiTick)) != MH_OK)
-    {
-        cout << "Disabled/Unable to hook AiTick";
+    if (Config.EnableAiTick)
+    { 
+        if (MH_CreateHook((LPVOID)Agent_AiTick_Address, &Hooked_Agent_AiTick, (LPVOID*)(&Original_Agent_AiTick)) != MH_OK)
+        {
+            cout << "Error hooking AiTick";
+        }
     }
-    if (!Config.EnableAgentTick && MH_CreateHook((LPVOID)Agent_Tick_Address, &Hooked_Agent_Tick, (LPVOID*)(&Original_Agent_Tick)) != MH_OK)
+    if (Config.EnableAgentTick)
     {
-        cout << "Disabled/Unable to hook AgentTick";
+        if (MH_CreateHook((LPVOID)Agent_Tick_Address, &Hooked_Agent_Tick, (LPVOID*)(&Original_Agent_Tick)) != MH_OK)
+        {
+            cout << "Error hooking AgentTick";
+        }
     }
-    if (!Config.EnableUpdateDynamicsFlags && MH_CreateHook((LPVOID)AgentMovDynSys_UpdateFlags_Address, &Hooked_AgentMovDynSys_UpdateFlags, (LPVOID*)(&Original_AgentMovDynSys_UpdateFlags)) != MH_OK)
+    if (Config.EnableUpdateDynamicsFlags)
     {
-        cout << "Disabled/Unable to hook AgentMovementAndDynamicsSystemUpdateFlags";
+        if (MH_CreateHook((LPVOID)AgentMovDynSys_UpdateFlags_Address, &Hooked_AgentMovDynSys_UpdateFlags, (LPVOID*)(&Original_AgentMovDynSys_UpdateFlags)) != MH_OK)
+        {
+            cout << "Error hooking AgentMovementAndDynamicsSystemUpdateFlags";
+        }
     }
-    if (!Config.EnableAnimTreeTick && MH_CreateHook((LPVOID)rglAnimTree_Tick_Address, &HookedASM_rglAnimTree_Tick, (LPVOID*)(&Original_rglAnimTree_Tick)) != MH_OK)
+    if (Config.EnableAnimTreeTick)
     {
-        cout << "Disabled/Unable to hook AnimTreeTick";
+        if (MH_CreateHook((LPVOID)rglAnimTree_Tick_Address, &HookedASM_rglAnimTree_Tick, (LPVOID*)(&Original_rglAnimTree_Tick)) != MH_OK)
+        {
+            cout << "Error hooking AnimTreeTick";
+        }
     }
-    if (!Config.EnableAnimGetEntitialQuat && MH_CreateHook((LPVOID)rglSkeleton_Anim_GetEntitialQuat_Address, &Hooked_rglSkeleton_Anim_GetEntitialQuat, (LPVOID*)(&Original_rglSkeleton_Anim_GetEntitialQuat)) != MH_OK)
+    if (Config.EnableAnimGetEntitialQuat)
     {
-        cout << "Disabled/Unable to hook AnimTreeTick";
+        if (MH_CreateHook((LPVOID)rglSkeleton_Anim_GetEntitialQuat_Address, &Hooked_rglSkeleton_Anim_GetEntitialQuat, (LPVOID*)(&Original_rglSkeleton_Anim_GetEntitialQuat)) != MH_OK)
+        {
+            cout << "Error hooking AnimGetEntitialFlags";
+        }
     }
 #if _DEBUG
-    if (DebugMethod_Address != 0 && MH_CreateHook((LPVOID)DebugMethod_Address, &Hooked_DebugMethod, (LPVOID*)(&Original_DebugMethod)) != MH_OK)
+    if (DebugMethod_Address != 0)
     {
-        cout << "Disabled/Unable to hook DebugMethod";
+        if (MH_CreateHook((LPVOID)DebugMethod_Address, &Hooked_DebugMethod, (LPVOID*)(&Original_DebugMethod)) != MH_OK)
+        {
+            cout << "Disabled/Unable to hook DebugMethod";
+        }
     }
 #endif
     MH_EnableHook(MH_ALL_HOOKS);
