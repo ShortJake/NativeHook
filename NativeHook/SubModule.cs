@@ -56,7 +56,7 @@ namespace NativeHook
                 EnableAiTick = true,
                 EnableUpdateDynamicsFlags = true,
                 EnableAnimTreeTick = false,
-                EnableAnimGetEntitialQuat = false
+                EnableAnimGetEntitialQuat = true
             };
             var proc = Process.GetCurrentProcess();
             foreach (ProcessModule module in proc.Modules)
