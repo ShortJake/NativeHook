@@ -1,4 +1,5 @@
 ﻿using HarmonyLib;
+using NativeHook;
 using TaleWorlds.MountAndBlade;
 
 
@@ -9,6 +10,7 @@ namespace SampleMod
         protected override void OnSubModuleLoad()
         {
             base.OnSubModuleLoad();
+            NativeHookSubModule.SetConfiguration(NativeHookConfiguration.AiTick | NativeHookConfiguration.AgentTick | NativeHookConfiguration.UpdateDynamicsFlags);
             new Harmony("native_hook_sample").PatchAll();
         }
 

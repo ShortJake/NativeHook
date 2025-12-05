@@ -21,7 +21,7 @@ BOOL APIENTRY DllMain( HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpRese
 
 LPCVOID NativeDLLAddress;
 SIZE_T NativeDLLSize;
-ModConfigStruct Config;
+NativeHookConfiguration Config;
 
 #pragma region  AiTick
 LPCVOID Agent_AiTick_Address;
@@ -160,40 +160,45 @@ void GetFunctionAddresses()
 
 void CreateAllHooks()
 {
-    if (Config.EnableAiTick)
+    if ((Config & Config_AiTick) != 0)
     { 
         if (MH_CreateHook((LPVOID)Agent_AiTick_Address, &Hooked_Agent_AiTick, (LPVOID*)(&Original_Agent_AiTick)) != MH_OK)
         {
             cout << "Error hooking AiTick";
         }
+        else cout << "Hooked AiTick";
     }
-    if (Config.EnableAgentTick)
+    if ((Config & Config_AgentTick) != 0)
     {
         if (MH_CreateHook((LPVOID)Agent_Tick_Address, &Hooked_Agent_Tick, (LPVOID*)(&Original_Agent_Tick)) != MH_OK)
         {
             cout << "Error hooking AgentTick";
         }
+        else cout << "Hooked AgentTick";
     }
-    if (Config.EnableUpdateDynamicsFlags)
+    if ((Config & Config_UpdateDynamicsFlags) != 0)
     {
         if (MH_CreateHook((LPVOID)AgentMovDynSys_UpdateFlags_Address, &Hooked_AgentMovDynSys_UpdateFlags, (LPVOID*)(&Original_AgentMovDynSys_UpdateFlags)) != MH_OK)
         {
             cout << "Error hooking AgentMovementAndDynamicsSystemUpdateFlags";
         }
+        else cout << "Hooked AgentMovementAndDynamicsSystemUpdateFlags";
     }
-    if (Config.EnableAnimTreeTick)
+    if ((Config & Config_AnimTreeTick) != 0)
     {
         if (MH_CreateHook((LPVOID)rglAnimTree_Tick_Address, &HookedASM_rglAnimTree_Tick, (LPVOID*)(&Original_rglAnimTree_Tick)) != MH_OK)
         {
             cout << "Error hooking AnimTreeTick";
         }
+        else cout << "Hooked AnimTreeTick";
     }
-    if (Config.EnableAnimGetEntitialQuat)
+    if ((Config & Config_AnimGetEntitialQuat) != 0)
     {
         if (MH_CreateHook((LPVOID)rglSkeleton_Anim_GetEntitialQuat_Address, &Hooked_rglSkeleton_Anim_GetEntitialQuat, (LPVOID*)(&Original_rglSkeleton_Anim_GetEntitialQuat)) != MH_OK)
         {
-            cout << "Error hooking AnimGetEntitialFlags";
+            cout << "Error hooking AnimGetEntitialQuars";
         }
+        else cout << "Hooked AnimGetEntitialQuars";
     }
 #if _DEBUG
     if (DebugMethod_Address != 0)
@@ -202,6 +207,7 @@ void CreateAllHooks()
         {
             cout << "Disabled/Unable to hook DebugMethod";
         }
+        else cout << "Hooked DebugMethod";
     }
 #endif
     MH_EnableHook(MH_ALL_HOOKS);
@@ -226,7 +232,7 @@ void NH_FillDebugMethodCallback(LPVOID debugMethodCallback)
 #endif
 
 extern "C" __declspec(dllexport)
-void NH_Initialize(LPVOID nativeDllAddress, SIZE_T nativeDllSize, ModConfigStruct configs)
+void NH_Initialize(LPVOID nativeDllAddress, SIZE_T nativeDllSize, NativeHookConfiguration configs)
 {
     MH_Initialize();
     NativeDLLAddress = nativeDllAddress;

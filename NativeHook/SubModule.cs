@@ -20,8 +20,9 @@ namespace NativeHook
 {
     public class NativeHookSubModule : MBSubModuleBase
     {
+        private bool _initialized;
         private Color ErrorColor;
-        private ModConfigStruct Config;
+        private static NativeHookConfiguration Config;
         public static IntPtr NativeDLLAddr;
         private static int NativeDLLSize;
         //Prevent GC'ing of delegates
@@ -30,7 +31,7 @@ namespace NativeHook
         private static MethodBase GetManagedObjWithId;
 
         [DllImport("NativeHookUnmanaged.dll")]
-        private static extern void NH_Initialize(IntPtr nativeDllAddress, IntPtr nativeDllSize, ModConfigStruct configs);
+        private static extern void NH_Initialize(IntPtr nativeDllAddress, IntPtr nativeDllSize, NativeHookConfiguration configs);
         [DllImport("NativeHookUnmanaged.dll")]
 
         private static extern void NH_FillCallbacks(MethodCallbackAddressStruct sigHolder);
@@ -44,20 +45,30 @@ namespace NativeHook
         [DllImport("NativeHookUnmanaged.dll")]
         private static extern void NH_FillDebugMethodCallback(IntPtr debugMethod);
 #endif
-        
 
+        public override void OnInitialState()
+        {
+            NH_Initialize(NativeDLLAddr, new IntPtr(NativeDLLSize), Config);
+            var bufferSize = new UIntPtr(Convert.ToUInt64(NativeDLLSize));
+#if Editor
+            UnkownBoneMatrixFrameBuffer = NativeDLLAddr + 0x1725990;
+            Agent_SetAnimSystemAddr = NH_ManagedScanFor(NativeDLLAddr, bufferSize, "48 89 5c 24 08 48 89 74 24 10 57 48 83 ec 30 48 8b d9 33 f6 48 8b 89 98 05 00 00", "Agent_SetAnimSystemAddr");
+            rglSkeletonAnim_SetEntitialQuatAddr = NH_ManagedScanFor(NativeDLLAddr, bufferSize, "48 89 5c 24 10 48 89 6c 24 18 48 89 74 24 20 57 48 83 ec 30 49 8b e9", "rglSkeletonAnim_SetInEntitialQuat");
+#else
+            UnkownBoneMatrixFrameBuffer = NativeDLLAddr + 0xc86890;
+            Agent_SetAnimSystemAddr = NH_ManagedScanFor(NativeDLLAddr, bufferSize, "48 89 5c 24 08 48 89 74 24 10 57 48 83 ec 20 48 8b d9 33 f6 48 8b 89 90", "Agent_SetAnimSystemAddr");
+            rglSkeletonAnim_SetEntitialQuatAddr = NH_ManagedScanFor(NativeDLLAddr, bufferSize, "48 89 5c 24 08 48 89 74 24 10 57 48 83 ec 20 48 8b d9 48 0f be f2", "rglSkeletonAnim_SetInEntitialQuat");
+#endif
+            call_Agent_SetAnimSystem = Marshal.GetDelegateForFunctionPointer<Agent_SetAnimSystemDelegate>(Agent_SetAnimSystemAddr);
+            call_rglSkeletonAnim_SetEntitialQuat = Marshal.GetDelegateForFunctionPointer<rglSkeletonAnim_SetEntitialQuatDelegate>(rglSkeletonAnim_SetEntitialQuatAddr);
+            FillNativeCallbacks();
+            _initialized = true;
+        }
         protected override void OnSubModuleLoad()
         {
             base.OnSubModuleLoad();
             ErrorColor = new Color(1f, 0.2f, 0.15f);
-            Config = new ModConfigStruct
-            {
-                EnableAgentTick = true,
-                EnableAiTick = true,
-                EnableUpdateDynamicsFlags = true,
-                EnableAnimTreeTick = false,
-                EnableAnimGetEntitialQuat = true
-            };
+            Config = 0;
             var proc = Process.GetCurrentProcess();
             foreach (ProcessModule module in proc.Modules)
             {
@@ -76,20 +87,11 @@ namespace NativeHook
             }
             
             GetManagedObjWithId = AccessTools.Method(typeof(DotNetObject), "GetManagedObjectWithId", new Type[] { typeof(int) });
-            NH_Initialize(NativeDLLAddr, new IntPtr(NativeDLLSize), Config);
-            var bufferSize = new UIntPtr(Convert.ToUInt64(NativeDLLSize));
-#if Editor
-            UnkownBoneMatrixFrameBuffer = NativeDLLAddr + 0x1725990;
-            Agent_SetAnimSystemAddr = NH_ManagedScanFor(NativeDLLAddr, bufferSize, "48 89 5c 24 08 48 89 74 24 10 57 48 83 ec 30 48 8b d9 33 f6 48 8b 89 98 05 00 00", "Agent_SetAnimSystemAddr");
-            rglSkeletonAnim_SetEntitialQuatAddr = NH_ManagedScanFor(NativeDLLAddr, bufferSize, "48 89 5c 24 10 48 89 6c 24 18 48 89 74 24 20 57 48 83 ec 30 49 8b e9", "rglSkeletonAnim_SetInEntitialQuat");
-#else
-            UnkownBoneMatrixFrameBuffer = NativeDLLAddr + 0xc86890;
-            Agent_SetAnimSystemAddr = NH_ManagedScanFor(NativeDLLAddr, bufferSize, "48 89 5c 24 08 48 89 74 24 10 57 48 83 ec 20 48 8b d9 33 f6 48 8b 89 90", "Agent_SetAnimSystemAddr");
-            rglSkeletonAnim_SetEntitialQuatAddr = NH_ManagedScanFor(NativeDLLAddr, bufferSize, "48 89 5c 24 08 48 89 74 24 10 57 48 83 ec 20 48 8b d9 48 0f be f2", "rglSkeletonAnim_SetInEntitialQuat");
-#endif
-            call_Agent_SetAnimSystem = Marshal.GetDelegateForFunctionPointer<Agent_SetAnimSystemDelegate>(Agent_SetAnimSystemAddr);
-            call_rglSkeletonAnim_SetEntitialQuat = Marshal.GetDelegateForFunctionPointer<rglSkeletonAnim_SetEntitialQuatDelegate>(rglSkeletonAnim_SetEntitialQuatAddr);
-            FillNativeCallbacks();
+        }
+
+        public static void SetConfiguration(NativeHookConfiguration newConfig)
+        {
+            Config |= newConfig;
         }
 
         protected override void OnSubModuleUnloaded()
@@ -97,13 +99,14 @@ namespace NativeHook
             base.OnSubModuleUnloaded();
             NH_Cleanup();
         }
+
+#if DEBUG
         public override void OnMissionBehaviorInitialize(Mission mission)
         {
             base.OnMissionBehaviorInitialize(mission);
-#if DEBUG
             mission.AddMissionBehavior(new DebugLogic());
-#endif
         }
+#endif
 
         private void FillNativeCallbacks()
         {

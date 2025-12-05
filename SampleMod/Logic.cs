@@ -72,7 +72,7 @@ namespace SampleMod
         private void OnPostAgentTick(Agent agent, float dt)
         {
             if (!agent.IsHuman || agent == Agent.Main) return;
-            agent.MovementFlags &= ~Agent.MovementControlFlag.AttackMask;
+            //agent.MovementFlags &= ~Agent.MovementControlFlag.AttackMask;
             /*agent.MovementFlags &= ~Agent.MovementControlFlag.DefendMask;
             EquipmentIndex polearm = EquipmentIndex.None;
             for (var i = EquipmentIndex.Weapon0; i < EquipmentIndex.NumPrimaryWeaponSlots; i++)

@@ -8,11 +8,11 @@ struct MethodCallbackAddressStruct
     LPCVOID AnimGetEntitialQuat;
 };
 
-struct ModConfigStruct
+enum NativeHookConfiguration : unsigned long
 {
-    bool EnableAiTick;
-    bool EnableAgentTick;
-    bool EnableUpdateDynamicsFlags;
-    bool EnableAnimTreeTick;
-    bool EnableAnimGetEntitialQuat;
+    Config_AiTick = 1,
+    Config_AgentTick = 2,
+    Config_UpdateDynamicsFlags = 4,
+    Config_AnimTreeTick = 8,
+    Config_AnimGetEntitialQuat = 16,
 };
