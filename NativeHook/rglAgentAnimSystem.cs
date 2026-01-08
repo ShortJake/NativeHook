@@ -9,7 +9,7 @@
         /// <summary>
         /// UIntPtr/ulong;
         /// </summary>
-        internal const int owner_agent = 0x24e0;
+        internal const int owner_agent = 0x2500;
 #if Editor
 
 #else

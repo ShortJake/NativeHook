@@ -18,4 +18,5 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include "ErrorHelper.h"
 #endif //PCH_H

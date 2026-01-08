@@ -71,42 +71,43 @@ namespace NativeHook
         /// <summary>
         /// Agent.EventControlFlag;
         /// </summary>
-        internal const int event_control_flags = 0x4c4;
+        internal const int event_control_flags = 0x498;
         /// <summary>
         /// Agent.MovementControlFlag;
         /// </summary>
-        internal const int movement_control_flags = 0x4c8;
+        internal const int movement_control_flags = 0x49c;
 #if Editor
-        internal const int rotation_frame = 0x528;
+        internal const int rotation_frame = 0x510;
         /// <summary>
         /// UIntPtr/ulong;
         /// </summary>
-        internal const int agent_anim_system = 0x598;
+        internal const int agent_anim_system = 0x580;
         /// <summary>
         /// Agent.MovementLockedState;
         /// </summary>
-        internal const int movement_locked_state = 0x600;
+        internal const int movement_locked_state = 0x5e8;
         /// <summary>
         /// UIntPtr/ulong;
         /// </summary>
-        internal const int cached_skeleton = 0x660;
+        internal const int cached_skeleton = 0x808;
         /// <summary>
         /// UIntPtr/ulong;
         /// </summary>
-        internal const int agent_visuals = 0x6e0;
+        internal const int agent_visuals = 0x878;
         /// <summary>
         /// UIntPtr/ulong;
         /// </summary>
-        internal const int agent_ai = 0x6e8;
+        internal const int agent_ai = 0x880;
         /// <summary>
         /// UIntPtr/ulong;
         /// </summary>
-        internal const int humanoid_record = 0x730;
+        internal const int humanoid_record = 0x8f8;
         /// <summary>
         /// UIntPtr/ulong;
         /// </summary>
-        internal const int agent_record = 0x740;
+        internal const int agent_record = 0x900;
 #else
+    //TODO: Update these offsets to v1.3.13
         internal const int rotation_frame = 0x520;
         /// <summary>
         /// UIntPtr/ulong;

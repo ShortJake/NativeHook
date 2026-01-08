@@ -47,6 +47,7 @@ namespace NativeHook
         /// </summary>
         internal const int skeleton = 0x1150;
 #else
+        //TODO: Find non-editor offsets for v1.3.13
         /// <summary>
         /// Pointer;
         /// </summary>

@@ -111,21 +111,22 @@ namespace NativeHook
         /// <summary>
         /// UIntPtr/ulong;
         /// </summary>
-        internal const int skeleton_scale = 0xd8;
+        internal const int skeleton_scale = 0xe0;
 #if Editor
         /// <summary>
         /// Vec3;
         /// </summary>
-        internal const int root_pos = 0x200;
+        internal const int root_pos = 0x250;
         /// <summary>
         /// UIntPtr/ulong;
         /// </summary>
-        internal const int skeleton_model = 0x220;
+        internal const int skeleton_model = 0x270;
         /// <summary>
         /// UIntPtr/ulong;
         /// </summary>
-        internal const int anim_tree = 0x228;
+        internal const int anim_tree = 0x278;
 #else
+        //TODO: Find non-editor offsets for v1.3.13
         /// <summary>
         /// Vec3;
         /// </summary>

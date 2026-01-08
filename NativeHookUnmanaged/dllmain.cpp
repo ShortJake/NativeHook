@@ -27,7 +27,7 @@ NativeHookConfiguration Config;
 LPCVOID Agent_AiTick_Address;
 void(*ManagedCallback_OnPostAiTick)(int agentObjId, float dt);
 #if EDITOR
-const string Agent_AiTick_Signature = "48 8b c4 f3 0f 11 48 10 55 41 54 41 55";
+const string Agent_AiTick_Signature = "48 8b c4 f3 0f 11 [01001...] ? 55 41 54 41 55 ";
 void(*Original_Agent_AiTick)(LPVOID, float, LPVOID, LPVOID);
 void Hooked_Agent_AiTick(LPBYTE agentPtr, float dt, LPVOID debugParam1Ptr, LPVOID debugParam2Ptr)
 {
@@ -51,7 +51,7 @@ void Hooked_Agent_AiTick(LPBYTE agentPtr, float dt)
 LPCVOID Agent_Tick_Address;
 void(*ManagedCallback_OnPostAgentTick)(int agentObjectId, float dt);
 #if EDITOR
-const string Agent_Tick_Signature = "40 53 48 81 ec a0 00 00 00 80 b9 97";
+const string Agent_Tick_Signature = "48 8b c4 56 57 41 56 48 81 ec a0 00 00 00 48 c7 40 80 fe ff ff ff";
 void(*Original_Agent_Tick)(LPVOID, float, LPVOID, LPVOID);
 void Hooked_Agent_Tick(LPBYTE agentPtr, float dt, LPVOID debugParam1Ptr, LPVOID debugParam2Ptr)
 {
@@ -84,7 +84,7 @@ void Hooked_AgentMovDynSys_UpdateFlags(LPBYTE dynamicsSystemPtr, LPVOID missionP
     ManagedCallback_AfterUpdateDynamicsFlags(agentIndex, dt, oldFlags, newFlags);
 }
 #if EDITOR
-const string AgentMovDynSys_UpdateFlags_Signature = "40 55 56 48 8d 6c 24 b9 48 81 ec";
+const string AgentMovDynSys_UpdateFlags_Signature = "40 55 53 48 8d 6c [..100...] ? 48 81 ec ? ? ? ? 4c 89 74 [..100...]";
 #else
 const string AgentMovDynSys_UpdateFlags_Signature = "40 55 57 48 8b ec 48 83 ec 48 48 89";
 #endif
@@ -98,7 +98,7 @@ extern "C" {
     void HookedASM_rglAnimTree_Tick();
 }
 #if EDITOR
-const string rglAnimTree_Tick_Signature = "0f 8c 1a f2 ff ff 44 0f 28 bc";
+const string rglAnimTree_Tick_Signature = "0f 8c ? ? ? ? 44 0f 28 bc [..100100] 20 14 00 00 ";
 extern "C" void HookedWithParams_rglAnimTree_Tick(LPVOID skeletonPtr, BYTE boneIndex, LPVOID cachedMatrixFrameArrayPtr)
 {
     ManagedCallback_OnAnimTreeTick(0x0, skeletonPtr, boneIndex, cachedMatrixFrameArrayPtr);
@@ -116,7 +116,7 @@ extern "C" void HookedWithParams_rglAnimTree_Tick(LPVOID skeletonPtr, BYTE boneI
 LPCVOID rglSkeleton_Anim_GetEntitialQuat_Address;
 void(*ManagedCallback_AnimGetEntitialQuat)(LPVOID animPtr, LPVOID skeletalModelPtr, BYTE boneIndex);
 #if EDITOR
-const string rglSkeleton_Anim_GetEntitialQuat_Signature = "48 8b c4 88 50 10 55 53 48 8d 6c 24 88";
+const string rglSkeleton_Anim_GetEntitialQuat_Signature = "48 8b c4 88 [01......] ? 55 53 48 8d 6c [..100...]";
 #else 
 const string rglSkeleton_Anim_GetEntitialQuat_Signature = "48 89 5c 24 18 55 48 81";
 #endif

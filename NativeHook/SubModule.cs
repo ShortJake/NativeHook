@@ -31,6 +31,8 @@ namespace NativeHook
         private static MethodBase GetManagedObjWithId;
 
         [DllImport("NativeHookUnmanaged.dll")]
+        private static extern void NH_SetErrorMessageCallback(IntPtr delegatePointer);
+        [DllImport("NativeHookUnmanaged.dll")]
         private static extern void NH_Initialize(IntPtr nativeDllAddress, IntPtr nativeDllSize, NativeHookConfiguration configs);
         [DllImport("NativeHookUnmanaged.dll")]
 
@@ -39,7 +41,7 @@ namespace NativeHook
         [DllImport("NativeHookUnmanaged.dll")]
         private static extern void NH_Cleanup();
         [DllImport("NativeHookUnmanaged.dll")]
-        private static extern IntPtr NH_ManagedScanFor(IntPtr baseAddress, UIntPtr bufferSize, [MarshalAs(UnmanagedType.LPStr)]string signature, [MarshalAs(UnmanagedType.LPStr)] string errorMsgName);
+        private static extern IntPtr NH_ManagedScanForFirst(IntPtr baseAddress, UIntPtr bufferSize, [MarshalAs(UnmanagedType.LPStr)] string signature, [MarshalAs(UnmanagedType.LPStr)] string errorMsgName);
 
 #if DEBUG
         [DllImport("NativeHookUnmanaged.dll")]
@@ -52,15 +54,16 @@ namespace NativeHook
             var bufferSize = new UIntPtr(Convert.ToUInt64(NativeDLLSize));
 #if Editor
             UnkownBoneMatrixFrameBuffer = NativeDLLAddr + 0x1725990;
-            Agent_SetAnimSystemAddr = NH_ManagedScanFor(NativeDLLAddr, bufferSize, "48 89 5c 24 08 48 89 74 24 10 57 48 83 ec 30 48 8b d9 33 f6 48 8b 89 98 05 00 00", "Agent_SetAnimSystemAddr");
-            rglSkeletonAnim_SetEntitialQuatAddr = NH_ManagedScanFor(NativeDLLAddr, bufferSize, "48 89 5c 24 10 48 89 6c 24 18 48 89 74 24 20 57 48 83 ec 30 49 8b e9", "rglSkeletonAnim_SetInEntitialQuat");
+            Agent_SetAnimSystemAddr = NH_ManagedScanForFirst(NativeDLLAddr, bufferSize, "48 89 5c [..100...] ? 48 89 74 [..100...] ? 57 48 83 ec ? 48 8b d9 33 [11......] 48 8b [10001...]", "Agent_SetAnimSystemAddr");
+            rglSkeletonAnim_SetEntitialQuatAddr = NH_ManagedScanForFirst(NativeDLLAddr, bufferSize, "48 89 5c [..100...] ? 48 89 6c [..100...] ? 48 89 74 [..100...] ? 57 48 83 ec ? 49 8b e9 49 8b f0", "rglSkeletonAnim_SetEntitialQuat");
 #else
+            //TODO: Update to non-editor v1.3.13
             UnkownBoneMatrixFrameBuffer = NativeDLLAddr + 0xc86890;
             Agent_SetAnimSystemAddr = NH_ManagedScanFor(NativeDLLAddr, bufferSize, "48 89 5c 24 08 48 89 74 24 10 57 48 83 ec 20 48 8b d9 33 f6 48 8b 89 90", "Agent_SetAnimSystemAddr");
             rglSkeletonAnim_SetEntitialQuatAddr = NH_ManagedScanFor(NativeDLLAddr, bufferSize, "48 89 5c 24 08 48 89 74 24 10 57 48 83 ec 20 48 8b d9 48 0f be f2", "rglSkeletonAnim_SetInEntitialQuat");
 #endif
-            call_Agent_SetAnimSystem = Marshal.GetDelegateForFunctionPointer<Agent_SetAnimSystemDelegate>(Agent_SetAnimSystemAddr);
-            call_rglSkeletonAnim_SetEntitialQuat = Marshal.GetDelegateForFunctionPointer<rglSkeletonAnim_SetEntitialQuatDelegate>(rglSkeletonAnim_SetEntitialQuatAddr);
+            if (Agent_SetAnimSystemAddr != IntPtr.Zero) call_Agent_SetAnimSystem = Marshal.GetDelegateForFunctionPointer<Agent_SetAnimSystemDelegate>(Agent_SetAnimSystemAddr);
+            if (rglSkeletonAnim_SetEntitialQuatAddr != IntPtr.Zero) call_rglSkeletonAnim_SetEntitialQuat = Marshal.GetDelegateForFunctionPointer<rglSkeletonAnim_SetEntitialQuatDelegate>(rglSkeletonAnim_SetEntitialQuatAddr);
             FillNativeCallbacks();
             _initialized = true;
         }
@@ -68,6 +71,11 @@ namespace NativeHook
         {
             base.OnSubModuleLoad();
             ErrorColor = new Color(1f, 0.2f, 0.15f);
+            CallbackDelegates = new List<Delegate>();
+            var showErrorMsg = new ShowErrorMessageDelegate(ShowErrorMessage);
+            NH_SetErrorMessageCallback(Marshal.GetFunctionPointerForDelegate(showErrorMsg));
+            CallbackDelegates.Add(showErrorMsg);
+
             Config = 0;
             var proc = Process.GetCurrentProcess();
             foreach (ProcessModule module in proc.Modules)
@@ -79,13 +87,10 @@ namespace NativeHook
             }
             if (NativeDLLAddr == IntPtr.Zero)
             {
-                var errorMsg = "NativeHook Error! Could not find TaleWorlds.Native.dll";
-                InformationManager.DisplayMessage(new InformationMessage(errorMsg, ErrorColor));
-                MBDebug.ShowWarning(errorMsg);
-                MBDebug.Print(errorMsg);
+                ShowErrorMessage("Could not find TaleWorlds.Native.dll");
                 return;
             }
-            
+
             GetManagedObjWithId = AccessTools.Method(typeof(DotNetObject), "GetManagedObjectWithId", new Type[] { typeof(int) });
         }
 
@@ -110,7 +115,6 @@ namespace NativeHook
 
         private void FillNativeCallbacks()
         {
-            CallbackDelegates = new List<Delegate>();
             var onPostAiTick = new Callback_OnPostAiTickDelegate(Callback_OnPostAiTick);
             CallbackDelegates.Add(onPostAiTick);
             var onPostAgentTick = new Callback_OnPostAgentTickDelegate(Callback_OnPostAgentTick);
@@ -229,7 +233,7 @@ namespace NativeHook
         #region Anim Get Entitial Quat 
         private delegate void Callback_AnimGetEntitialQuatDelegate(IntPtr animPtr, IntPtr skeletonModelPtr, sbyte boneIndex);
         unsafe static private void Callback_AnimGetEntitialQuat(IntPtr animPtr, IntPtr skeletonModelPtr, sbyte boneIndex)
-        {  
+        {
             var outQuat = rglSkeletonAnim.GetOutQuat(animPtr, boneIndex);
             if (outQuat.IsUnit) return;
 
@@ -238,6 +242,7 @@ namespace NativeHook
             var parentPastTrans = BoneTransformation.Identity;
             var modelBonesArray = (byte*)(*(ulong*)(skeletonModelPtr + rglSkeletonModel.bones_array).ToPointer());
             var skeleton = *(ulong*)(animPtr + rglSkeletonAnim.skeleton).ToPointer();
+            if (skeleton == 0x0) return;
             var skeletonBonesArray = *(ulong*)(skeleton + rglSkeleton.bones);
             if (parentIndex > -1)
             {
@@ -283,5 +288,14 @@ namespace NativeHook
         }
 #endif
         #endregion
+
+        [UnmanagedFunctionPointer(CallingConvention.ThisCall, SetLastError = true)]
+        public delegate void ShowErrorMessageDelegate([MarshalAs(UnmanagedType.LPStr)] string msg);
+        public void ShowErrorMessage(string msg)
+        {
+            msg = $"NativeHook: ({msg})";
+            InformationManager.DisplayMessage(new InformationMessage(msg, ErrorColor));
+            MBDebug.Print(msg);
+        }
     }
 }
