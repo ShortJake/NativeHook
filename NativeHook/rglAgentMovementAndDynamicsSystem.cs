@@ -321,6 +321,9 @@ namespace NativeHook
         #endregion
     }
 
+    /// <summary>
+    /// Likely outdated since war sails introduced swimming
+    /// </summary>
     [Flags]
     public enum AgentOnLandFlags : byte
     {
@@ -347,7 +350,7 @@ namespace NativeHook
         UseSmallerCapsuleRadius = 128,
         Flag9 = 256, //Always On??
         Flag10 = 512,
-        Flag11 = 1024,
+        Flag11 = 1024, // Switch to Crouch?
         MountBrakeStop = 2048,
         MountBrakeStart = 4096,
         MountDashForward = 8192,
@@ -379,7 +382,7 @@ namespace NativeHook
         SwitchToRightStance = 16_777_216,
         SwitchToLeftStance = 33_554_432,
         /// <summary>
-        /// True when pressing jump button, and tries to start jump
+        /// True when pressing jump button, and tries to start jump. Only works if agent control flags have jump
         /// </summary>
         StartJump = 67_108_864,
         Flag28 = 134_217_728,

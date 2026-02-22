@@ -272,8 +272,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="ErrorHelper.h" />
+    <ClInclude Include="AgentTickHook.h" />
+    <ClInclude Include="AiTickHook.h" />
+    <ClInclude Include="AnimGetEnitialQuatHook.h" />
+    <ClInclude Include="AnimTreeTickHook.h" />
+    <ClInclude Include="DebugMethodHook.h" />
+    <ClInclude Include="Helpers.h" />
     <ClInclude Include="framework.h" />
+    <ClInclude Include="HookHeaders.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="rglAgent.h" />
     <ClInclude Include="rglAgentAnimSystem.h" />
@@ -283,10 +289,16 @@
     <ClInclude Include="rglSkeleton.h" />
     <ClInclude Include="SignatureScanner.h" />
     <ClInclude Include="Structs.h" />
+    <ClInclude Include="UpdateMovDynSysHook.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="AgentTickHook.cpp" />
+    <ClCompile Include="AiTickHook.cpp" />
+    <ClCompile Include="AnimGetEnitialQuatHook.cpp" />
+    <ClCompile Include="AnimTreeTickHook.cpp" />
+    <ClCompile Include="DebugMethodHook.cpp" />
     <ClCompile Include="dllmain.cpp" />
-    <ClCompile Include="ErrorHelper.cpp" />
+    <ClCompile Include="Helpers.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='DebugEditor|x64'">Create</PrecompiledHeader>
@@ -298,14 +310,14 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ReleaseEditor|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="SignatureScanner.cpp" />
+    <ClCompile Include="UpdateMovDynSysHook.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <MASM Include="HookedASM_rglAnimTree_Tick.asm">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='DebugEditor|x64'">EDITOR</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseEditor|x64'">EDITOR</PreprocessorDefinitions>
+    <MASM Include="DetourASM_rglAnimTree_Tick.asm">
+      <DeploymentContent>false</DeploymentContent>
     </MASM>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

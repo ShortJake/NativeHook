@@ -51,7 +51,7 @@ namespace NativeHook
         /// <summary>
         /// Pointer;
         /// </summary>
-        internal const int skeleton = 0x1128;
+        internal const int skeleton = 0x1150;
 #endif
 
         #endregion

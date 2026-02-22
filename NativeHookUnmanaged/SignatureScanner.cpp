@@ -11,7 +11,7 @@ vector<BYTE> GetMemoryBuffer(LPVOID baseAddress, SIZE_T size)
     HANDLE curProc = OpenProcess(PROCESS_VM_READ, false, GetCurrentProcessId());
     if (ReadProcessMemory(curProc, baseAddress, buffer.data(), size, &numOfBytesRead) == 0)
     {
-        ErrorHelper::ShowErrorMessage("Failed to get memory buffer");
+        Helpers::ShowErrorMessage("Failed to get memory buffer");
         return buffer;
     }
     CloseHandle(curProc);
@@ -71,7 +71,7 @@ LPCVOID ScanForFirstResult(LPVOID baseAddress, vector<BYTE>* buffer, vector<Mask
 {
     if (buffer == NULL || signature == NULL)
     {
-        ErrorHelper::ShowErrorMessage("Failed to find address for function " + functionName + ". Null buffer or signature");
+        Helpers::ShowErrorMessage("Failed to find address for function " + functionName + ". Null buffer or signature");
         return 0;
     }
     for (int i = 0; i < buffer->size(); i++)
@@ -99,7 +99,7 @@ LPCVOID ScanForFirstResult(LPVOID baseAddress, vector<BYTE>* buffer, vector<Mask
             }
         }
     }
-    ErrorHelper::ShowErrorMessage("Failed to find address for function " + functionName);
+    Helpers::ShowErrorMessage("Failed to find address for function " + functionName);
     return 0;
 }
 
@@ -108,7 +108,7 @@ vector<LPCVOID> ScanForAllResults(LPVOID baseAddress, vector<BYTE>* buffer, vect
     vector<LPCVOID> hits;
     if (buffer == NULL || signature == NULL)
     {
-        ErrorHelper::ShowErrorMessage("Failed to find address for function " + errorMsgName + ". Null buffer or signature");
+        Helpers::ShowErrorMessage("Failed to find address for function " + errorMsgName + ". Null buffer or signature");
         return hits;
     }
     for (int i = 0; i < buffer->size(); i++)
@@ -132,7 +132,7 @@ vector<LPCVOID> ScanForAllResults(LPVOID baseAddress, vector<BYTE>* buffer, vect
             }
         }
     }
-    if (hits.empty()) ErrorHelper::ShowErrorMessage("Failed to find any matches for function " + errorMsgName);
+    if (hits.empty()) Helpers::ShowErrorMessage("Failed to find any matches for function " + errorMsgName);
     return hits;
 }
 

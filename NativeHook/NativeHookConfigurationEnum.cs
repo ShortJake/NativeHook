@@ -14,5 +14,6 @@ namespace NativeHook
         UpdateDynamicsFlags = 4,
         AnimTreeTick = 8,
         AnimGetEntitialQuat = 16,
+        All = AiTick | AgentTick | UpdateDynamicsFlags | AnimTreeTick | AnimGetEntitialQuat
     }
 }

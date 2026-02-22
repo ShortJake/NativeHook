@@ -7,14 +7,7 @@ using System.Diagnostics;
 using HarmonyLib;
 using TaleWorlds.DotNet;
 using TaleWorlds.Library;
-using TaleWorlds.InputSystem;
-using TaleWorlds.Core;
 using TaleWorlds.Engine;
-using System.Text.RegularExpressions;
-using System.Xml.Linq;
-using System.Net;
-using System.Security.Policy;
-using TaleWorlds.Engine.GauntletUI;
 
 namespace NativeHook
 {
@@ -50,6 +43,8 @@ namespace NativeHook
 
         public override void OnInitialState()
         {
+            if (_initialized) return;
+            FillNativeCallbacks();
             NH_Initialize(NativeDLLAddr, new IntPtr(NativeDLLSize), Config);
             var bufferSize = new UIntPtr(Convert.ToUInt64(NativeDLLSize));
 #if Editor
@@ -59,12 +54,11 @@ namespace NativeHook
 #else
             //TODO: Update to non-editor v1.3.13
             UnkownBoneMatrixFrameBuffer = NativeDLLAddr + 0xc86890;
-            Agent_SetAnimSystemAddr = NH_ManagedScanFor(NativeDLLAddr, bufferSize, "48 89 5c 24 08 48 89 74 24 10 57 48 83 ec 20 48 8b d9 33 f6 48 8b 89 90", "Agent_SetAnimSystemAddr");
-            rglSkeletonAnim_SetEntitialQuatAddr = NH_ManagedScanFor(NativeDLLAddr, bufferSize, "48 89 5c 24 08 48 89 74 24 10 57 48 83 ec 20 48 8b d9 48 0f be f2", "rglSkeletonAnim_SetInEntitialQuat");
+            Agent_SetAnimSystemAddr = NH_ManagedScanForFirst(NativeDLLAddr, bufferSize, "48 89 5c 24 08 48 89 74 24 10 57 48 83 ec 20 48 8b d9 33 f6 48 8b 89 90", "Agent_SetAnimSystemAddr");
+            rglSkeletonAnim_SetEntitialQuatAddr = NH_ManagedScanForFirst(NativeDLLAddr, bufferSize, "48 89 5c 24 08 48 89 74 24 10 57 48 83 ec 20 48 8b d9 48 0f be f2", "rglSkeletonAnim_SetInEntitialQuat");
 #endif
             if (Agent_SetAnimSystemAddr != IntPtr.Zero) call_Agent_SetAnimSystem = Marshal.GetDelegateForFunctionPointer<Agent_SetAnimSystemDelegate>(Agent_SetAnimSystemAddr);
             if (rglSkeletonAnim_SetEntitialQuatAddr != IntPtr.Zero) call_rglSkeletonAnim_SetEntitialQuat = Marshal.GetDelegateForFunctionPointer<rglSkeletonAnim_SetEntitialQuatDelegate>(rglSkeletonAnim_SetEntitialQuatAddr);
-            FillNativeCallbacks();
             _initialized = true;
         }
         protected override void OnSubModuleLoad()

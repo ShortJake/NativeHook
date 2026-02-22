@@ -16,6 +16,12 @@
     <Filter Include="Header Files\RGL">
       <UniqueIdentifier>{98be652a-7249-44af-8343-68774931465f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Hooks">
+      <UniqueIdentifier>{09753785-d1b1-4cfb-88c1-f378aed3efe7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Hooks">
+      <UniqueIdentifier>{818dc737-b564-4554-85b4-4c023bf62449}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -48,8 +54,29 @@
     <ClInclude Include="Structs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ErrorHelper.h">
+    <ClInclude Include="Helpers.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="HookHeaders.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AnimGetEnitialQuatHook.h">
+      <Filter>Header Files\Hooks</Filter>
+    </ClInclude>
+    <ClInclude Include="AiTickHook.h">
+      <Filter>Header Files\Hooks</Filter>
+    </ClInclude>
+    <ClInclude Include="AgentTickHook.h">
+      <Filter>Header Files\Hooks</Filter>
+    </ClInclude>
+    <ClInclude Include="UpdateMovDynSysHook.h">
+      <Filter>Header Files\Hooks</Filter>
+    </ClInclude>
+    <ClInclude Include="AnimTreeTickHook.h">
+      <Filter>Header Files\Hooks</Filter>
+    </ClInclude>
+    <ClInclude Include="DebugMethodHook.h">
+      <Filter>Header Files\Hooks</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -62,16 +89,34 @@
     <ClCompile Include="SignatureScanner.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ErrorHelper.cpp">
+    <ClCompile Include="Helpers.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="AnimTreeTickHook.cpp">
+      <Filter>Source Files\Hooks</Filter>
+    </ClCompile>
+    <ClCompile Include="AiTickHook.cpp">
+      <Filter>Source Files\Hooks</Filter>
+    </ClCompile>
+    <ClCompile Include="AgentTickHook.cpp">
+      <Filter>Source Files\Hooks</Filter>
+    </ClCompile>
+    <ClCompile Include="AnimGetEnitialQuatHook.cpp">
+      <Filter>Source Files\Hooks</Filter>
+    </ClCompile>
+    <ClCompile Include="UpdateMovDynSysHook.cpp">
+      <Filter>Source Files\Hooks</Filter>
+    </ClCompile>
+    <ClCompile Include="DebugMethodHook.cpp">
+      <Filter>Source Files\Hooks</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <MASM Include="HookedASM_rglAnimTree_Tick.asm">
-      <Filter>Source Files</Filter>
+    <MASM Include="DetourASM_rglAnimTree_Tick.asm">
+      <Filter>Source Files\Hooks</Filter>
     </MASM>
   </ItemGroup>
 </Project>

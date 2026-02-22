@@ -1,12 +1,12 @@
-public HookedASM_rglAnimTree_Tick
+public DetourASM_rglAnimTree_Tick
 
-EXTERN HookedWithParams_rglAnimTree_Tick:PROC
+EXTERN DetourWithParams_rglAnimTree_Tick:PROC
 EXTERN Original_rglAnimTree_Tick:QWORD
 
 .CODE
-HookedASM_rglAnimTree_Tick	PROC
+DetourASM_rglAnimTree_Tick	PROC
 		
-		;Saving these registers because they are used in HookedWithParams_rglAnimTree_Tick
+		;Saving these registers because they are used in DetourWithParams_rglAnimTree_Tick
 		;Other volative registers (R9, R10, R11, XMM0-5) are set again the native function's loop 
 		;so it's not important to save them
 		;Other registers that need to be preserved are R12, R15, RDI, XMM11, XMM13, but these are callee-saved anyway
@@ -26,7 +26,7 @@ HookedASM_rglAnimTree_Tick	PROC
 		mov		[rsp + 48], r9
 		mov		[rsp + 40], rcx
 		lea		r8, [rsp+40]
-		mov		dl, al
+		mov		dl, r13b
 		mov		rcx, rdi
 	ELSE
 		mov		[rsp + 64], r11
@@ -37,7 +37,7 @@ HookedASM_rglAnimTree_Tick	PROC
 		mov		dl, r13b
 		mov		rcx, rdi
 	ENDIF
-		call	HookedWithParams_rglAnimTree_Tick
+		call	DetourWithParams_rglAnimTree_Tick
 		add		rsp, 64
 
 		pop		r8
@@ -45,12 +45,13 @@ HookedASM_rglAnimTree_Tick	PROC
 		pop		rax
 		pop		rcx
 	IFDEF EDITOR
-		cmp		al, r15b
+		cmp		sil, r13b
 	ELSE
+		;TODO : Find non-editor register
 		cmp		r13b, r14b
 	ENDIF
 		jmp		Original_rglAnimTree_Tick
-HookedASM_rglAnimTree_Tick	ENDP
+DetourASM_rglAnimTree_Tick	ENDP
 
 .CODE
 END

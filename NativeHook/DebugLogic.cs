@@ -63,7 +63,7 @@ namespace NativeHook
 
         private void AfterUpdateDynamicsFlags(Agent agent, float dt, AgentDynamicsFlags oldFlags, AgentDynamicsFlags newFlags)
         {
-            if (agent != Agent.Main || agent.MountAgent == null) return;
+            if (agent != Agent.Main) return;
         }
         private void OnAnimTreeTick(Skeleton skeleton, byte firstBoneIndex, ref MatrixFrame[] cachedMatrixFrames)
         {
