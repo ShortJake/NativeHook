@@ -108,11 +108,11 @@ namespace NativeHook
         /// int;
         /// </summary>
         internal const int cache_index = 0x44;
+#if Editor
         /// <summary>
         /// UIntPtr/ulong;
         /// </summary>
         internal const int skeleton_scale = 0xe0;
-#if Editor
         /// <summary>
         /// Vec3;
         /// </summary>
@@ -126,19 +126,22 @@ namespace NativeHook
         /// </summary>
         internal const int anim_tree = 0x278;
 #else
-        //TODO: Find non-editor offsets for v1.3.13
+/// <summary>
+        /// UIntPtr/ulong;
+        /// </summary>
+        internal const int skeleton_scale = 0xd8;
         /// <summary>
         /// Vec3;
         /// </summary>
-        internal const int root_pos = 0x1e8;
+        internal const int root_pos = 0x228;
         /// <summary>
         /// UIntPtr/ulong;
         /// </summary>
-        internal const int skeleton_model = 0x208;
+        internal const int skeleton_model = 0x248;
         /// <summary>
         /// UIntPtr/ulong;
         /// </summary>
-        internal const int anim_tree = 0x210;
+        internal const int anim_tree = 0x250;
 #endif
         #endregion
     }

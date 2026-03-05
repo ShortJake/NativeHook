@@ -16,11 +16,11 @@ constexpr auto RGL_AGENT_agent_ai = 0x880;
 constexpr auto RGL_AGENT_humanoid_record = 0x8f8;
 constexpr auto RGL_AGENT_agent_record = 0x900;
 #else
-constexpr auto RGL_AGENT_rotation_frame = 0x520;
-constexpr auto RGL_AGENT_agent_anim_system = 0x590;
-constexpr auto RGL_AGENT_cached_skeleton = 0x658;
-constexpr auto RGL_AGENT_agent_visuals = 0x6d8;
-constexpr auto RGL_AGENT_agent_ai = 0x6e0;
-constexpr auto RGL_AGENT_humanoid_record = 0x728;
-constexpr auto RGL_AGENT_agent_record = 0x738;
+constexpr auto RGL_AGENT_rotation_frame = 0x518;
+constexpr auto RGL_AGENT_agent_anim_system = 0x588;
+constexpr auto RGL_AGENT_cached_skeleton = 0x810;
+constexpr auto RGL_AGENT_agent_visuals = 0x880;
+constexpr auto RGL_AGENT_agent_ai = 0x888;
+constexpr auto RGL_AGENT_humanoid_record = 0x900;
+constexpr auto RGL_AGENT_agent_record = 0x908;
 #endif

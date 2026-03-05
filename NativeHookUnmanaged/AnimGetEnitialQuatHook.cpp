@@ -8,7 +8,7 @@ const NativeHookConfiguration AnimGetEnitialQuatHook::ConfigValue = Config_AnimG
 #if EDITOR
 const string AnimGetEnitialQuatHook::Signature = "48 8b c4 88 [01......] ? 55 53 48 8d 6c [..100...]";
 #else
-const string AnimGetEnitialQuatHook::Signautre = "48 89 5c 24 18 55 48 81";
+const string AnimGetEnitialQuatHook::Signature = "48 89 5c [..100...] ? 55 48 81 ec ? ? ? ? 49 8b [10000...]";
 #endif
 void(*AnimGetEnitialQuatHook::ManagedCallback)(LPVOID animPtr, LPVOID skeletalModelPtr, BYTE boneIndex) = 0;
 LPVOID(*AnimGetEnitialQuatHook::Original)(LPVOID, BYTE, LPVOID) = 0;

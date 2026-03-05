@@ -10,10 +10,11 @@ private:
 	const static std::string Name;
 	const static std::string Signature;
 	static void(*ManagedCallback)(int agentObjId, float dt);
-	static void(*Original)(LPVOID, float, LPVOID, LPVOID);
 #if EDITOR
+	static void(*Original)(LPVOID, float, LPVOID, LPVOID);
 	void static Detour(LPBYTE agentPtr, float dt, LPVOID debugParam1Ptr, LPVOID debugParam2Ptr);
 #else 
+	static void(*Original)(LPVOID, float);
 	void static Detour(LPBYTE agentPtr, float dt);
 #endif
 public:

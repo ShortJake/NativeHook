@@ -77,66 +77,65 @@ namespace NativeHook
         /// </summary>
         internal const int movement_control_flags = 0x49c;
 #if Editor
-        internal const int rotation_frame = 0x510;
+        internal const int rotation_frame = 0x510 + 0x10; //There's 0x10 between versions 1.3.9 and 1.3.15
         /// <summary>
         /// UIntPtr/ulong;
         /// </summary>
-        internal const int agent_anim_system = 0x580;
+        internal const int agent_anim_system = 0x580 + 0x10; //There's 0x10 between versions 1.3.9 and 1.3.15
         /// <summary>
         /// Agent.MovementLockedState;
         /// </summary>
-        internal const int movement_locked_state = 0x5e8;
+        internal const int movement_locked_state = 0x5e8 + 0x10; //There's 0x10 between versions 1.3.9 and 1.3.15
         /// <summary>
         /// UIntPtr/ulong;
         /// </summary>
-        internal const int cached_skeleton = 0x808;
+        internal const int cached_skeleton = 0x808 + 0x10; //There's 0x10 between versions 1.3.9 and 1.3.15
         /// <summary>
         /// UIntPtr/ulong;
         /// </summary>
-        internal const int agent_visuals = 0x878;
+        internal const int agent_visuals = 0x878 + 0x10; //There's 0x10 between versions 1.3.9 and 1.3.15
         /// <summary>
         /// UIntPtr/ulong;
         /// </summary>
-        internal const int agent_ai = 0x880;
+        internal const int agent_ai = 0x880 + 0x10; //There's 0x10 between versions 1.3.9 and 1.3.15
         /// <summary>
         /// UIntPtr/ulong;
         /// </summary>
-        internal const int humanoid_record = 0x8f8;
+        internal const int humanoid_record = 0x8f8 + 0x10; //There's 0x10 between versions 1.3.9 and 1.3.15
         /// <summary>
         /// UIntPtr/ulong;
         /// </summary>
-        internal const int agent_record = 0x900;
+        internal const int agent_record = 0x900 + 0x10; //There's 0x10 between versions 1.3.9 and 1.3.15
 #else
-    //TODO: Update these offsets to v1.3.13
-        internal const int rotation_frame = 0x520;
+        internal const int rotation_frame = 0x518;
         /// <summary>
         /// UIntPtr/ulong;
         /// </summary>
-        internal const int agent_anim_system = 0x590;
-        // <summary>
+        internal const int agent_anim_system = 0x588;
+        /// <summary>
         /// Agent.MovementLockedState;
         /// </summary>
-        internal const int movement_locked_state = 0x5f8;
+        internal const int movement_locked_state = 0x5f0;
         /// <summary>
         /// UIntPtr/ulong;
         /// </summary>
-        internal const int cached_skeleton = 0x658;
+        internal const int cached_skeleton = 0x810;
         /// <summary>
         /// UIntPtr/ulong;
         /// </summary>
-        internal const int agent_visuals = 0x6d8;
+        internal const int agent_visuals = 0x880;
         /// <summary>
         /// UIntPtr/ulong;
         /// </summary>
-        internal const int agent_ai = 0x6e0;
+        internal const int agent_ai = 0x888;
         /// <summary>
         /// UIntPtr/ulong;
         /// </summary>
-        internal const int humanoid_record = 0x728;
+        internal const int humanoid_record = 0x900;
         /// <summary>
         /// UIntPtr/ulong;
         /// </summary>
-        internal const int agent_record = 0x738;
+        internal const int agent_record = 0x908;
 #endif
         #endregion
     }

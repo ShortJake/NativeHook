@@ -44,7 +44,7 @@ namespace NativeHook
         {
             UIntPtr agentPointer = agent.GetPointer();
             ulong movementSystemPointer = *(ulong*)(agentPointer + rglAgent.agent_movement_and_dynamics_system).ToPointer();
-            *(float*)(movementSystemPointer + turn_veclocity) = angularVelocity;
+            *(float*)(movementSystemPointer + turn_velocity) = angularVelocity;
         }
         /// <summary>
         /// Returns the rotation speed of mount agents
@@ -53,7 +53,7 @@ namespace NativeHook
         {
             UIntPtr agentPointer = agent.GetPointer();
             ulong movementSystemPointer = *(ulong*)(agentPointer + rglAgent.agent_movement_and_dynamics_system).ToPointer();
-            return *(float*)(movementSystemPointer + turn_veclocity);
+            return *(float*)(movementSystemPointer + turn_velocity);
         }
         /// <summary>
         /// Sets the force acting on the agent. Only affects free-falling agents NOT on land.
@@ -274,7 +274,7 @@ namespace NativeHook
         /// <summary>
         /// float;
         /// </summary>
-        internal const int turn_veclocity = 0x160;
+        internal const int turn_velocity = 0x160;
         /// <summary>
         /// float;
         /// </summary>
@@ -303,7 +303,7 @@ namespace NativeHook
         /// <summary>
         /// float;
         /// </summary>
-        internal const int turn_veclocity = 0x160 - 0x28;
+        internal const int turn_velocity = 0x160 - 0x28;
         /// <summary>
         /// float;
         /// </summary>

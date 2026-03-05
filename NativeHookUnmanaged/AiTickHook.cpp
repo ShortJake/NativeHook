@@ -6,12 +6,13 @@ LPCVOID AiTickHook::Address = 0;
 const string AiTickHook::Name = "AiTick";
 const NativeHookConfiguration AiTickHook::ConfigValue = Config_AiTick;
 #if EDITOR
-const string AiTickHook::Signature = "48 8b c4 f3 0f 11 [01001...] ? 55 41 54 41 55 ";
+void(*AiTickHook::Original)(LPVOID, float, LPVOID, LPVOID) = 0;
+const string AiTickHook::Signature = "48 8b c4 f3 0f 11 48 ? 55 41 54 41 55";
 #else
-const string AiTickHook::Signautre = "48 8b c4 f3 0f 11 48 10 55 41 54 41";
+void(*AiTickHook::Original)(LPVOID, float) = 0;
+const string AiTickHook::Signature = "48 8b c4 f3 0f 11 48 ? 55 41 54 41 55";
 #endif
 void(*AiTickHook::ManagedCallback)(int agentObjId, float dt) = 0;
-void(*AiTickHook::Original)(LPVOID, float, LPVOID, LPVOID) = 0;
 
 #if EDITOR
 void AiTickHook::Detour(LPBYTE agentPtr, float dt, LPVOID debugParam1Ptr, LPVOID debugParam2Ptr)
@@ -23,9 +24,9 @@ void AiTickHook::Detour(LPBYTE agentPtr, float dt, LPVOID debugParam1Ptr, LPVOID
 #else
 void AiTickHook::Detour(LPBYTE agentPtr, float dt)
 {
-	Original_Agent_AiTick(agentPtr, dt);
+	Original(agentPtr, dt);
 	int agentObjId = *(int*)(agentPtr + RGL_AGENT_obj_id);
-	ManagedCallback_OnPostAiTick(agentObjId, dt);
+	ManagedCallback(agentObjId, dt);
 }
 #endif
 

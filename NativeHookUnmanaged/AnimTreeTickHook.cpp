@@ -11,7 +11,7 @@ const NativeHookConfiguration AnimTreeTickHook::ConfigValue = Config_AnimTreeTic
 #if EDITOR
 const string AnimTreeTickHook::Signature = "0f 8c ? ? ? ? 44 0f 28 bc [..100100] 20 14 00 00";
 #else
-const string AnimTreeTickHook::Signautre = "0f 8c e6 f8 ff ff 44 0f b6 64 24 20";
+const string AnimTreeTickHook::Signature = "0f 8c e6 f8 ff ff 44 0f b6 64 24 20";
 #endif
 void(*AnimTreeTickHook::ManagedCallback)(LPVOID animTreePtr, LPVOID skeletonPtr, BYTE boneIndex, LPVOID cachedMatrixFrameArrayPtr) = 0;
 

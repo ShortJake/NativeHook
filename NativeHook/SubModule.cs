@@ -48,14 +48,13 @@ namespace NativeHook
             NH_Initialize(NativeDLLAddr, new IntPtr(NativeDLLSize), Config);
             var bufferSize = new UIntPtr(Convert.ToUInt64(NativeDLLSize));
 #if Editor
-            UnkownBoneMatrixFrameBuffer = NativeDLLAddr + 0x1725990;
+            //UnkownBoneMatrixFrameBuffer = NativeDLLAddr + 0x1725990;
             Agent_SetAnimSystemAddr = NH_ManagedScanForFirst(NativeDLLAddr, bufferSize, "48 89 5c [..100...] ? 48 89 74 [..100...] ? 57 48 83 ec ? 48 8b d9 33 [11......] 48 8b [10001...]", "Agent_SetAnimSystemAddr");
             rglSkeletonAnim_SetEntitialQuatAddr = NH_ManagedScanForFirst(NativeDLLAddr, bufferSize, "48 89 5c [..100...] ? 48 89 6c [..100...] ? 48 89 74 [..100...] ? 57 48 83 ec ? 49 8b e9 49 8b f0", "rglSkeletonAnim_SetEntitialQuat");
 #else
-            //TODO: Update to non-editor v1.3.13
-            UnkownBoneMatrixFrameBuffer = NativeDLLAddr + 0xc86890;
-            Agent_SetAnimSystemAddr = NH_ManagedScanForFirst(NativeDLLAddr, bufferSize, "48 89 5c 24 08 48 89 74 24 10 57 48 83 ec 20 48 8b d9 33 f6 48 8b 89 90", "Agent_SetAnimSystemAddr");
-            rglSkeletonAnim_SetEntitialQuatAddr = NH_ManagedScanForFirst(NativeDLLAddr, bufferSize, "48 89 5c 24 08 48 89 74 24 10 57 48 83 ec 20 48 8b d9 48 0f be f2", "rglSkeletonAnim_SetInEntitialQuat");
+            //UnkownBoneMatrixFrameBuffer = NativeDLLAddr + 0xc86890;
+            Agent_SetAnimSystemAddr = NH_ManagedScanForFirst(NativeDLLAddr, bufferSize, "48 89 5c [..100...] ? 48 89 74 [..100...] ? 57 48 83 ec ? 48 8b d9 33 [11......] 48 8b [10001...]", "Agent_SetAnimSystemAddr");
+            rglSkeletonAnim_SetEntitialQuatAddr = NH_ManagedScanForFirst(NativeDLLAddr, bufferSize, "48 89 5c [..100...] ? 48 89 74 [..100...] ? 57 48 83 ec ? 48 8b d9 48 0f be f2", "rglSkeletonAnim_SetInEntitialQuat");
 #endif
             if (Agent_SetAnimSystemAddr != IntPtr.Zero) call_Agent_SetAnimSystem = Marshal.GetDelegateForFunctionPointer<Agent_SetAnimSystemDelegate>(Agent_SetAnimSystemAddr);
             if (rglSkeletonAnim_SetEntitialQuatAddr != IntPtr.Zero) call_rglSkeletonAnim_SetEntitialQuat = Marshal.GetDelegateForFunctionPointer<rglSkeletonAnim_SetEntitialQuatDelegate>(rglSkeletonAnim_SetEntitialQuatAddr);
@@ -228,26 +227,29 @@ namespace NativeHook
         private delegate void Callback_AnimGetEntitialQuatDelegate(IntPtr animPtr, IntPtr skeletonModelPtr, sbyte boneIndex);
         unsafe static private void Callback_AnimGetEntitialQuat(IntPtr animPtr, IntPtr skeletonModelPtr, sbyte boneIndex)
         {
-            var outQuat = rglSkeletonAnim.GetOutQuat(animPtr, boneIndex);
-            if (outQuat.IsUnit) return;
+            return;
+            var outQuat = rglSkeletonAnimStruct.GetOutQuat(animPtr, boneIndex);
+            var off = DebugLogic.FindOffsetInMemory<ulong>(0x000000f006df6880, 0x400, 0x000005bf61420900, true);
+            //if (outQuat.IsUnit) return;
 
             var parentIndex = *(sbyte*)(skeletonModelPtr + rglSkeletonModel.bone_parents + boneIndex).ToPointer();
             var parentQuat = Quaternion.Identity;
             var parentPastTrans = BoneTransformation.Identity;
             var modelBonesArray = (byte*)(*(ulong*)(skeletonModelPtr + rglSkeletonModel.bones_array).ToPointer());
-            var skeleton = *(ulong*)(animPtr + rglSkeletonAnim.skeleton).ToPointer();
+            var skeleton = *(ulong*)(animPtr - 0x3e0).ToPointer();
             if (skeleton == 0x0) return;
             var skeletonBonesArray = *(ulong*)(skeleton + rglSkeleton.bones);
+            return;
             if (parentIndex > -1)
             {
-                parentQuat = rglSkeletonAnim.GetOutEntitialQuat(animPtr, parentIndex);
+                parentQuat = rglSkeletonAnimStruct.GetOutEntitialQuat(animPtr, parentIndex);
                 if (!parentQuat.IsUnit)
                 {
                     Callback_AnimGetEntitialQuat(animPtr, skeletonModelPtr, parentIndex);
-                    parentQuat = rglSkeletonAnim.GetOutEntitialQuat(animPtr, parentIndex);
+                    parentQuat = rglSkeletonAnimStruct.GetOutEntitialQuat(animPtr, parentIndex);
                 }
                 parentPastTrans = *(BoneTransformation*)(skeletonBonesArray + (uint)parentIndex * rglBoneStruct.size + rglBoneStruct.transformation);
-            }     
+            }
             var pastTrans = *(BoneTransformation*)(skeletonBonesArray + (uint)boneIndex * rglBoneStruct.size + rglBoneStruct.transformation);
             var pastLocalQuat = parentPastTrans.q.TransformToLocal(pastTrans.q);
             if (!pastLocalQuat.IsUnit)
@@ -256,13 +258,13 @@ namespace NativeHook
                 var localRestFrame = *(MatrixFrame*)(modelBonesArray + boneIndex * rglBoneModelStruct.size + rglBoneModelStruct.local_rest_frame);
                 var newInQuat = localRestFrame.rotation.ToQuaternion();
                 newInQuat = parentQuat.TransformToParent(newInQuat);
-                rglSkeletonAnim.SetOutQuat(animPtr, boneIndex, newInQuat, skeletonModelPtr);
+                rglSkeletonAnimStruct.SetOutQuat(animPtr, boneIndex, newInQuat, skeletonModelPtr);
             }
             else
             {
                 pastLocalQuat = parentQuat.TransformToParent(pastLocalQuat);
-                rglSkeletonAnim.SetOutQuat(animPtr, boneIndex, pastLocalQuat, skeletonModelPtr);
-            }   
+                rglSkeletonAnimStruct.SetOutQuat(animPtr, boneIndex, pastLocalQuat, skeletonModelPtr);
+            }
         }
         #endregion
         

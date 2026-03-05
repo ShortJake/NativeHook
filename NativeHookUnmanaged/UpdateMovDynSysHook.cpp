@@ -8,7 +8,7 @@ const NativeHookConfiguration UpdateMovDynSysHook::ConfigValue = Config_UpdateDy
 #if EDITOR
 const string UpdateMovDynSysHook::Signature = "40 55 53 48 8d 6c [..100...] ? 48 81 ec ? ? ? ? 4c 89 74 [..100...]";
 #else
-const string UpdateMovDynSysHook::Signautre = "40 55 57 48 8b ec 48 83 ec 48 48 89";
+const string UpdateMovDynSysHook::Signature = "40 55 57 48 8b ec 48 83 ec ? 48 89 5c [..100...]";
 #endif
 void(*UpdateMovDynSysHook::ManagedCallback)(int agentIndex, float dt, unsigned int oldFlags, unsigned int newFlags) = 0;
 void(*UpdateMovDynSysHook::Original)(LPBYTE, LPVOID, float, LPBYTE, BYTE) = 0;

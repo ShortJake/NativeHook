@@ -14,21 +14,21 @@ using TaleWorlds.MountAndBlade;
 
 namespace NativeHook
 {
-    public static class rglSkeletonAnim
+    public static class rglSkeletonAnimStruct
     {
         #region Methods
-        public unsafe static Quaternion GetOutQuat(IntPtr skeletonAnim, sbyte boneIndex)
+        public unsafe static Quaternion GetOutQuat(IntPtr animStruct, sbyte boneIndex)
         {
-            return *(Quaternion*)(skeletonAnim + out_quats + boneIndex * sizeof(Quaternion)).ToPointer();
+            return *(Quaternion*)(animStruct + out_quats + boneIndex * sizeof(Quaternion)).ToPointer();
         }
-        public unsafe static void SetOutQuat(IntPtr skeletonAnim, sbyte boneIndex, Quaternion newQuat, IntPtr skeletonModel)
+        public unsafe static void SetOutQuat(IntPtr animStruct, sbyte boneIndex, Quaternion newQuat, IntPtr skeletonModel)
         {
             newQuat.Normalize();
-            NativeHookSubModule.call_rglSkeletonAnim_SetEntitialQuat(skeletonAnim, boneIndex, newQuat, skeletonModel);
+            NativeHookSubModule.call_rglSkeletonAnim_SetEntitialQuat(animStruct, boneIndex, newQuat, skeletonModel);
         }
-        public unsafe static Quaternion GetOutEntitialQuat(IntPtr skeletonAnim, sbyte boneIndex)
+        public unsafe static Quaternion GetOutEntitialQuat(IntPtr animStruct, sbyte boneIndex)
         {
-            return *(Quaternion*)(skeletonAnim + out_entitial_quats + boneIndex * sizeof(Quaternion)).ToPointer();
+            return *(Quaternion*)(animStruct + out_entitial_quats + boneIndex * sizeof(Quaternion)).ToPointer();
         }
         #endregion
 
@@ -45,13 +45,12 @@ namespace NativeHook
         /// <summary>
         /// Pointer;
         /// </summary>
-        internal const int skeleton = 0x1150;
+        //internal const int skeleton = -0xD8;//0x1150;
 #else
-        //TODO: Find non-editor offsets for v1.3.13
         /// <summary>
         /// Pointer;
         /// </summary>
-        internal const int skeleton = 0x1150;
+        //internal const int skeleton = 0x1150;
 #endif
 
         #endregion
