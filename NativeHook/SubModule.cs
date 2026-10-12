@@ -8,6 +8,7 @@ using HarmonyLib;
 using TaleWorlds.DotNet;
 using TaleWorlds.Library;
 using TaleWorlds.Engine;
+using TaleWorlds.InputSystem;
 
 namespace NativeHook
 {
@@ -19,6 +20,7 @@ namespace NativeHook
         public static IntPtr NativeDLLAddr;
         private static int NativeDLLSize;
         //Prevent GC'ing of delegates
+        // Prevent GC'ing of delegates
         private static List<Delegate> CallbackDelegates;
         // Returns the managed object that corresponds to this ID. ID is at an offset of 0x18 for agents
         private static MethodBase GetManagedObjWithId;
@@ -118,6 +120,8 @@ namespace NativeHook
             CallbackDelegates.Add(onAnimTreeTick);
             var animGetEntitialQuat = new Callback_AnimGetEntitialQuatDelegate(Callback_AnimGetEntitialQuat);
             CallbackDelegates.Add(animGetEntitialQuat);
+            var animSysGetBlendedAnimStruct = new Callback_AnimSysGetBlendedAnimStructDelegate(Callback_AnimSysGetBlendedAnimStruct);
+            CallbackDelegates.Add(animSysGetBlendedAnimStruct);
             var sigHolder = new MethodCallbackAddressStruct
             {
                 OnPostAiTick = Marshal.GetFunctionPointerForDelegate(onPostAiTick),
@@ -125,6 +129,7 @@ namespace NativeHook
                 AfterUpdateDynamicsFlags = Marshal.GetFunctionPointerForDelegate(afterUpdateDynamicsFlags),
                 OnAnimTreeTick = Marshal.GetFunctionPointerForDelegate(onAnimTreeTick),
                 AnimGetEntitialQuat = Marshal.GetFunctionPointerForDelegate(animGetEntitialQuat),
+                AnimSysGetBlendedAnimStruct = Marshal.GetFunctionPointerForDelegate(animSysGetBlendedAnimStruct)
             };
             NH_FillCallbacks(sigHolder);
 #if DEBUG
@@ -228,7 +233,7 @@ namespace NativeHook
         unsafe static private void Callback_AnimGetEntitialQuat(IntPtr animPtr, IntPtr skeletonModelPtr, sbyte boneIndex)
         {
             return;
-            var outQuat = rglSkeletonAnimStruct.GetOutQuat(animPtr, boneIndex);
+            /*var outQuat = rglSkeletonAnimStruct.GetOutQuat(animPtr, boneIndex);
             var off = DebugLogic.FindOffsetInMemory<ulong>(0x000000f006df6880, 0x400, 0x000005bf61420900, true);
             //if (outQuat.IsUnit) return;
 
@@ -264,7 +269,7 @@ namespace NativeHook
             {
                 pastLocalQuat = parentQuat.TransformToParent(pastLocalQuat);
                 rglSkeletonAnimStruct.SetOutQuat(animPtr, boneIndex, pastLocalQuat, skeletonModelPtr);
-            }
+            }*/
         }
         #endregion
         
@@ -275,6 +280,46 @@ namespace NativeHook
         public static rglSkeletonAnim_SetEntitialQuatDelegate call_rglSkeletonAnim_SetEntitialQuat;
         #endregion
 
+        #region Anim System Get Blended Anim Struct
+        private delegate void Callback_AnimSysGetBlendedAnimStructDelegate(IntPtr skeletonPtr, IntPtr outAnimStructPtr);
+        unsafe static private void Callback_AnimSysGetBlendedAnimStruct(IntPtr skeletonPtr, IntPtr outAnimStructPtr)
+        {
+            var boneCount = *(byte*)(outAnimStructPtr + rglSkeletonAnimStruct.bone_count).ToPointer();
+            if (boneCount > 64) boneCount = 64;
+            var skeletonModelPtr = *(long*)(skeletonPtr + rglSkeleton.skeleton_model).ToPointer();
+            var modelBonesArray = (sbyte*)(*(ulong*)(skeletonModelPtr + rglSkeletonModel.bones_array));
+            var skeletonBonesArray = *(ulong*)(skeletonPtr + rglSkeleton.bones).ToPointer();
+            for (sbyte i = 0; i < boneCount; i++)
+            {
+                var outQuat = rglSkeletonAnimStruct.GetOutQuat(outAnimStructPtr, i);
+                if (outQuat.IsUnit) continue;
+                var parentQuat = Quaternion.Identity;
+                var parentPastTrans = BoneTransformation.Identity;
+                var parentIndex = *(sbyte*)(skeletonModelPtr + rglSkeletonModel.bone_parents + (uint)i);
+                if (parentIndex > -1)
+                {
+                    parentQuat = rglSkeletonAnimStruct.GetOutEntitialQuat(outAnimStructPtr, parentIndex);
+                    parentPastTrans = *(BoneTransformation*)(skeletonBonesArray + (uint)parentIndex * rglBoneStruct.size + rglBoneStruct.transformation);
+                }
+                var pastTrans = *(BoneTransformation*)(skeletonBonesArray + (uint)i * rglBoneStruct.size + rglBoneStruct.transformation);
+                var pastLocalQuat = parentPastTrans.q.TransformToLocal(pastTrans.q);
+                if (!pastLocalQuat.IsUnit)
+                {
+
+                    var localRestFrame = *(MatrixFrame*)(modelBonesArray + i * rglBoneModelStruct.size + rglBoneModelStruct.local_rest_frame);
+                    var newInQuat = localRestFrame.rotation.ToQuaternion();
+                    newInQuat = parentQuat.TransformToParent(newInQuat);
+                    rglSkeletonAnimStruct.SetOutQuat(outAnimStructPtr, i, newInQuat, new IntPtr(skeletonModelPtr));
+                }
+                else
+                {
+                    pastLocalQuat = parentQuat.TransformToParent(pastLocalQuat);
+                    rglSkeletonAnimStruct.SetOutQuat(outAnimStructPtr, i, pastLocalQuat, new IntPtr(skeletonModelPtr));
+                }
+            }
+        }
+        #endregion
+
         #region DebugMethod
 #if DEBUG
         private delegate void Callback_DebugMethodDelegate(IntPtr animPtr, IntPtr skeletonModelPtr, byte boneIndex, IntPtr outQuat);
@@ -283,7 +328,7 @@ namespace NativeHook
             
         }
 #endif
-        #endregion
+#endregion
 
         [UnmanagedFunctionPointer(CallingConvention.ThisCall, SetLastError = true)]
         public delegate void ShowErrorMessageDelegate([MarshalAs(UnmanagedType.LPStr)] string msg);

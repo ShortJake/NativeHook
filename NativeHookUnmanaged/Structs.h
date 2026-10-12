@@ -6,6 +6,7 @@ struct MethodCallbackAddressStruct
     LPCVOID AfterUpdateDynamicsFlags;
     LPCVOID OnAnimTreeTick;
     LPCVOID AnimGetEntitialQuat;
+    LPCVOID AnimSysGetBlendedAnimStruct;
 };
 
 enum NativeHookConfiguration : unsigned long
@@ -15,4 +16,5 @@ enum NativeHookConfiguration : unsigned long
     Config_UpdateDynamicsFlags = 4,
     Config_AnimTreeTick = 8,
     Config_AnimGetEntitialQuat = 16,
+    Config_AnimSysGetBlendedAnimStruct = 32,
 };

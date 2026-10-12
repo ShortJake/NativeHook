@@ -113,7 +113,7 @@ namespace SampleMod
             base.OnAgentBuild(agent, banner);
             if (!agent.IsHuman) return;
             agent.AddComponent(new FlyingAgentComponent(agent));
-            if (agent.Controller == Agent.ControllerType.AI) agent.AddComponent(new AIKickComponent(agent));
+            if (agent.Controller == AgentControllerType.AI) agent.AddComponent(new AIKickComponent(agent));
         }
     }
 }

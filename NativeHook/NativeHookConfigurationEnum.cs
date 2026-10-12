@@ -12,8 +12,11 @@ namespace NativeHook
         AiTick = 1,
         AgentTick = 2,
         UpdateDynamicsFlags = 4,
+        [Obsolete]
         AnimTreeTick = 8,
+        [Obsolete]
         AnimGetEntitialQuat = 16,
-        All = AiTick | AgentTick | UpdateDynamicsFlags | AnimTreeTick | AnimGetEntitialQuat
+        AnimSysGetBlendedAnimStruct = 32,
+        All = ulong.MaxValue
     }
 }

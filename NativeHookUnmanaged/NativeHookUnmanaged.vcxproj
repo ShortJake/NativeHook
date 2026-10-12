@@ -275,6 +275,7 @@
     <ClInclude Include="AgentTickHook.h" />
     <ClInclude Include="AiTickHook.h" />
     <ClInclude Include="AnimGetEnitialQuatHook.h" />
+    <ClInclude Include="AnimSysGetBlendedAnimStructHook.h" />
     <ClInclude Include="AnimTreeTickHook.h" />
     <ClInclude Include="DebugMethodHook.h" />
     <ClInclude Include="Helpers.h" />
@@ -295,6 +296,7 @@
     <ClCompile Include="AgentTickHook.cpp" />
     <ClCompile Include="AiTickHook.cpp" />
     <ClCompile Include="AnimGetEnitialQuatHook.cpp" />
+    <ClCompile Include="AnimSysGetBlendedAnimStructHook.cpp" />
     <ClCompile Include="AnimTreeTickHook.cpp" />
     <ClCompile Include="DebugMethodHook.cpp" />
     <ClCompile Include="dllmain.cpp" />

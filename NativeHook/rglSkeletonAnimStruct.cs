@@ -23,6 +23,11 @@ namespace NativeHook
         }
         public unsafe static void SetOutQuat(IntPtr animStruct, sbyte boneIndex, Quaternion newQuat, IntPtr skeletonModel)
         {
+            if (boneIndex > 63)
+            {
+                MBDebug.FailedAssert("boneIndex < 64", "rglSkeletonAnimStruct.cs", nameof(SetOutQuat));
+                return; 
+            }
             newQuat.Normalize();
             NativeHookSubModule.call_rglSkeletonAnim_SetEntitialQuat(animStruct, boneIndex, newQuat, skeletonModel);
         }
@@ -41,6 +46,10 @@ namespace NativeHook
         /// Quaternion[64];
         /// </summary>
         internal const int out_quats = 0x820;
+        /// <summary>
+        /// byte;
+        /// </summary>
+        internal const int bone_count = 0x1040;
 #if Editor
         /// <summary>
         /// Pointer;

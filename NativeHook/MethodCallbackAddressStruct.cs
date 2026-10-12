@@ -15,5 +15,6 @@ namespace NativeHook
         public IntPtr AfterUpdateDynamicsFlags;
         public IntPtr OnAnimTreeTick;
         public IntPtr AnimGetEntitialQuat;
+        public IntPtr AnimSysGetBlendedAnimStruct;
     }
 }

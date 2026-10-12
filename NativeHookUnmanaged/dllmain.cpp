@@ -26,15 +26,25 @@ NativeHookConfiguration Config;
 MethodCallbackAddressStruct ManagedCallbacks;
 LPCVOID ManagedCallback_DebugMethod;
 
+
+bool ReturnTrue() {
+    return true;
+}
+bool ReturnFalse() {
+    return false;
+}
+
 void CreateAllHooks()
 {
     vector<BYTE> buffer = GetMemoryBuffer((LPVOID)NativeDLLAddress, NativeDLLSize);
     AiTickHook::Create(Config, NativeDLLAddress, &buffer, ManagedCallbacks.OnPostAiTick);
     AgentTickHook::Create(Config, NativeDLLAddress, &buffer, ManagedCallbacks.OnPostAgentTick);
     UpdateMovDynSysHook::Create(Config, NativeDLLAddress, &buffer, ManagedCallbacks.AfterUpdateDynamicsFlags);
-    AnimGetEnitialQuatHook::Create(Config, NativeDLLAddress, &buffer, ManagedCallbacks.AnimGetEntitialQuat);
+    // Doubtful usefulness. Don't hook for now
+    //AnimGetEnitialQuatHook::Create(Config, NativeDLLAddress, &buffer, ManagedCallbacks.AnimGetEntitialQuat);
     // Doesn't work. Don't hook it for now
-    AnimTreeTickHook::Create(Config, NativeDLLAddress, &buffer, ManagedCallbacks.OnAnimTreeTick);
+    //AnimTreeTickHook::Create(Config, NativeDLLAddress, &buffer, ManagedCallbacks.OnAnimTreeTick);
+    AnimSysGetBlendedAnimStructHook::Create(Config, NativeDLLAddress, &buffer, ManagedCallbacks.AnimSysGetBlendedAnimStruct);
 #if _DEBUG
     DebugMethodHook::Create(Config, NativeDLLAddress, &buffer, ManagedCallback_DebugMethod);
 #endif
