@@ -19,7 +19,6 @@ namespace NativeHook
         private static NativeHookConfiguration Config;
         public static IntPtr NativeDLLAddr;
         private static int NativeDLLSize;
-        //Prevent GC'ing of delegates
         // Prevent GC'ing of delegates
         private static List<Delegate> CallbackDelegates;
         // Returns the managed object that corresponds to this ID. ID is at an offset of 0x18 for agents
@@ -53,13 +52,16 @@ namespace NativeHook
             //UnkownBoneMatrixFrameBuffer = NativeDLLAddr + 0x1725990;
             Agent_SetAnimSystemAddr = NH_ManagedScanForFirst(NativeDLLAddr, bufferSize, "48 89 5c [..100...] ? 48 89 74 [..100...] ? 57 48 83 ec ? 48 8b d9 33 [11......] 48 8b [10001...]", "Agent_SetAnimSystemAddr");
             rglSkeletonAnim_SetEntitialQuatAddr = NH_ManagedScanForFirst(NativeDLLAddr, bufferSize, "48 89 5c [..100...] ? 48 89 6c [..100...] ? 48 89 74 [..100...] ? 57 48 83 ec ? 49 8b e9 49 8b f0", "rglSkeletonAnim_SetEntitialQuat");
+            rglSkeleton_SetBoneScaleAddr = NH_ManagedScanForFirst(NativeDLLAddr, bufferSize, "48 89 5c 24 08 48 89 74 24 10 57 48 83 ec 70 48 8b d9 49 8b f8 48 8b [10001...]", "rglSkeleton_SetBoneScaleDelegate");
 #else
             //UnkownBoneMatrixFrameBuffer = NativeDLLAddr + 0xc86890;
             Agent_SetAnimSystemAddr = NH_ManagedScanForFirst(NativeDLLAddr, bufferSize, "48 89 5c [..100...] ? 48 89 74 [..100...] ? 57 48 83 ec ? 48 8b d9 33 [11......] 48 8b [10001...]", "Agent_SetAnimSystemAddr");
             rglSkeletonAnim_SetEntitialQuatAddr = NH_ManagedScanForFirst(NativeDLLAddr, bufferSize, "48 89 5c [..100...] ? 48 89 74 [..100...] ? 57 48 83 ec ? 48 8b d9 48 0f be f2", "rglSkeletonAnim_SetInEntitialQuat");
+            rglSkeleton_SetBoneScaleAddr = NH_ManagedScanForFirst(NativeDLLAddr, bufferSize, "4c 8b dc 48 81 ec a8 00 00 00 48 8b 81 d8 00 00 00", "rglSkeleton_SetBoneScaleDelegate");
 #endif
             if (Agent_SetAnimSystemAddr != IntPtr.Zero) call_Agent_SetAnimSystem = Marshal.GetDelegateForFunctionPointer<Agent_SetAnimSystemDelegate>(Agent_SetAnimSystemAddr);
             if (rglSkeletonAnim_SetEntitialQuatAddr != IntPtr.Zero) call_rglSkeletonAnim_SetEntitialQuat = Marshal.GetDelegateForFunctionPointer<rglSkeletonAnim_SetEntitialQuatDelegate>(rglSkeletonAnim_SetEntitialQuatAddr);
+            if (rglSkeleton_SetBoneScaleAddr != IntPtr.Zero) call_rglSkeleton_SetBoneScale = Marshal.GetDelegateForFunctionPointer<rglSkeleton_SetBoneScaleDelegate>(rglSkeleton_SetBoneScaleAddr);
             _initialized = true;
         }
         protected override void OnSubModuleLoad()
@@ -319,6 +321,17 @@ namespace NativeHook
             }
         }
         #endregion
+
+        #region Skeleton Set Bone Scale
+        private static IntPtr rglSkeleton_SetBoneScaleAddr;
+        [UnmanagedFunctionPointer(CallingConvention.ThisCall, SetLastError = true)]
+#if Editor
+        unsafe public delegate void rglSkeleton_SetBoneScaleDelegate(UIntPtr skeletonPtr, sbyte boneIndex, Vec3* newScale, char* debugParam);
+#else
+        unsafe public delegate void rglSkeleton_SetBoneScaleDelegate(UIntPtr skeletonPtr, sbyte boneIndex, Vec3* newScale);
+#endif
+        public static rglSkeleton_SetBoneScaleDelegate call_rglSkeleton_SetBoneScale;
+#endregion
 
         #region DebugMethod
 #if DEBUG

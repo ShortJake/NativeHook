@@ -17,7 +17,40 @@ namespace NativeHook
     public static class rglSkeleton
     {
         #region Extension Methods
-        private static MethodBase GetPtr = AccessTools.Method(typeof(Agent), "GetPtr");
+        public unsafe static Vec3 GetBoneScale(this Skeleton skeleton, sbyte boneIndex)
+        {
+            if (skeleton == null)
+            {
+                MBDebug.FailedAssert("NativeHook: Skeleton cannot be null!", "rglSkeleton.cs", $"{nameof(SetBoneScale)}");
+                return Vec3.Invalid;
+            }
+            if (boneIndex >= skeleton.GetBoneCount())
+            {
+                MBDebug.FailedAssert("NativeHook: Bone index bigger or equal to bone count!", "rglSkeleton.cs", $"{nameof(SetBoneScale)}");
+                return Vec3.Invalid;
+            }
+            var skeletonScale = *(ulong*)(skeleton.Pointer + skeleton_scale).ToPointer();
+            var boneScales = (Vec3*)*(ulong*)(skeletonScale + rglSkeletonScale.scales_array_addr);
+            return boneScales[boneIndex];
+        }
+        public unsafe static void SetBoneScale(this Skeleton skeleton, sbyte boneIndex, Vec3 newScale)
+        {
+            if (skeleton == null)
+            {
+                MBDebug.FailedAssert("NativeHook: Skeleton cannot be null!", "rglSkeleton.cs", $"{nameof(SetBoneScale)}");
+                return;
+            }
+            if (boneIndex >= skeleton.GetBoneCount())
+            {
+                MBDebug.FailedAssert("NativeHook: Bone index bigger or equal to bone count!", "rglSkeleton.cs", $"{nameof(SetBoneScale)}");
+                return;
+            }
+#if Editor
+            NativeHookSubModule.call_rglSkeleton_SetBoneScale(skeleton.Pointer, boneIndex, &newScale, null);
+#else
+            NativeHookSubModule.call_rglSkeleton_SetBoneScale(skeleton.Pointer, boneIndex, &newScale);
+#endif
+        }
         /// <summary/>
         /// <see cref="GetSkeletonSpecificBoneRestFrame"/>
         public unsafe static void SetSkeletonSpecificBoneRestFrame(this Skeleton skeleton, byte boneIndex, MatrixFrame newFrame)
